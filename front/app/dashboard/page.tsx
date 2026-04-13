@@ -1,0 +1,133 @@
+"use client";
+
+import { useEffect, useMemo, useState } from "react";
+import { useRouter } from "next/navigation";
+import { getAllUsers, getCurrentUser } from "@/lib/authStorage";
+import { PublicUser } from "@/interfaces/auth.interface";
+import PageShell from "@/components/layout/PageShell";
+import { PULSE } from "@/lib/pulse";
+
+function DashboardPage() {
+  const router = useRouter();
+  const [mounted, setMounted] = useState(false);
+  const [currentUser, setCurrentUser] = useState<PublicUser | null>(null);
+  const [users, setUsers] = useState<PublicUser[]>([]);
+
+  useEffect(() => {
+    setCurrentUser(getCurrentUser());
+    setUsers(getAllUsers());
+    setMounted(true);
+  }, []);
+
+  useEffect(() => {
+    if (!mounted) return;
+    if (!currentUser) {
+      router.replace("/login");
+    }
+  }, [router, currentUser, mounted]);
+
+  const mostActiveUser = useMemo(() => {
+    if (!users.length) return null;
+    return [...users].sort((a, b) => b.loginCount - a.loginCount)[0];
+  }, [users]);
+
+  if (!mounted || !currentUser) {
+    return (
+      <PageShell>
+        <p className={`text-center ${PULSE.body}`}>Cargando dashboard...</p>
+      </PageShell>
+    );
+  }
+
+  return (
+    <PageShell>
+      <section className={`${PULSE.card} p-8`}>
+        <p className={PULSE.kicker}>ADMIN PANEL</p>
+        <h1 className={`mt-2 ${PULSE.h1}`}>Dashboard de usuarios</h1>
+        <p className={`mt-2 text-sm ${PULSE.body}`}>
+          Vista general de usuarios registrados y sesion actual. Los tres clientes
+          de demo (María, Carlos, Ana) usan la contrasena{" "}
+          <span className="font-mono text-[#1C1E21]">demo123</span>.
+        </p>
+
+        <div className="mt-6 grid gap-4 md:grid-cols-3">
+          <article className={PULSE.surfaceMuted}>
+            <p className="text-xs text-[#65676B]">Usuarios registrados</p>
+            <p className="mt-1 text-2xl font-bold text-[#1C1E21]">
+              {users.length}
+            </p>
+          </article>
+          <article className={PULSE.surfaceMuted}>
+            <p className="text-xs text-[#65676B]">Usuario logueado</p>
+            <p className="mt-1 font-semibold text-[#1C1E21]">
+              {currentUser.fullName}
+            </p>
+            <p className="text-sm text-[#65676B]">{currentUser.email}</p>
+          </article>
+          <article className={PULSE.surfaceMuted}>
+            <p className="text-xs text-[#65676B]">Usuario mas activo</p>
+            <p className="mt-1 font-semibold text-[#1C1E21]">
+              {mostActiveUser ? mostActiveUser.fullName : "Sin datos"}
+            </p>
+            <p className="text-sm text-[#65676B]">
+              {mostActiveUser
+                ? `${mostActiveUser.loginCount} inicios de sesion`
+                : ""}
+            </p>
+          </article>
+        </div>
+
+        <div className="mt-8 overflow-hidden rounded-2xl border border-[#1877F2]/12">
+          <table className="w-full border-collapse text-left text-sm">
+            <thead className={PULSE.tableHead}>
+              <tr>
+                <th className="px-4 py-3 font-semibold">Nombre</th>
+                <th className="px-4 py-3 font-semibold">Correo</th>
+                <th className="px-4 py-3 font-semibold">Login count</th>
+                <th className="px-4 py-3 font-semibold">Ultimo acceso</th>
+                <th className="px-4 py-3 font-semibold">Estado</th>
+              </tr>
+            </thead>
+            <tbody>
+              {users.map((user) => {
+                const isCurrent = user.id === currentUser.id;
+                return (
+                  <tr
+                    key={user.id}
+                    className={`border-t border-[#1877F2]/10 ${
+                      isCurrent ? "bg-[#E7F3FF]/60" : "bg-white"
+                    }`}
+                  >
+                    <td className="px-4 py-3 font-medium text-[#1C1E21]">
+                      {user.fullName}
+                    </td>
+                    <td className="px-4 py-3 text-[#65676B]">{user.email}</td>
+                    <td className="px-4 py-3 text-[#65676B]">
+                      {user.loginCount}
+                    </td>
+                    <td className="px-4 py-3 text-[#65676B]">
+                      {new Date(user.lastLoginAt).toLocaleString()}
+                    </td>
+                    <td className="px-4 py-3">
+                      {isCurrent ? (
+                        <span className="rounded-full bg-[#1877F2]/15 px-3 py-1 text-xs font-semibold text-[#1877F2]">
+                          En sesion
+                        </span>
+                      ) : (
+                        <span className="rounded-full bg-[#F0F2F5] px-3 py-1 text-xs font-semibold text-[#65676B]">
+                          Inactivo
+                        </span>
+                      )}
+                    </td>
+                  </tr>
+                );
+              })}
+            </tbody>
+          </table>
+        </div>
+      </section>
+    </PageShell>
+  );
+}
+
+export default DashboardPage;
