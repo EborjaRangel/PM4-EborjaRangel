@@ -20,7 +20,16 @@ export class Product {
   @Column()
   description: string;
 
-  @Column()
+  @Column({
+    type: "numeric",
+    precision: 10,
+    scale: 2,
+    transformer: {
+      to: (value: number) => value,
+      from: (value: string | null) =>
+        value === null || value === undefined ? 0 : parseFloat(value),
+    },
+  })
   price: number;
 
   @Column()
@@ -28,6 +37,9 @@ export class Product {
 
   @Column()
   image: string;
+
+  @Column("text", { array: true, default: [] })
+  images: string[];
 
   @Column()
   categoryId: number;

@@ -1,16 +1,18 @@
 "use client";
 
 import Link from "next/link";
-import { FormEvent, useEffect, useState } from "react";
+import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
+import { FormikHelpers } from "formik";
 import { getCurrentUser, loginUser } from "@/lib/authStorage";
+import { hydrateLoggedInUserCart } from "@/lib/cartStorage";
+import LoginForm from "@/components/LoginForm/LoginForm";
 import PageShell from "@/components/layout/PageShell";
 import { PULSE } from "@/lib/pulse";
+import { ILoginFormValues } from "@/interfaces/auth.interface";
 
 export default function LoginPage() {
   const router = useRouter();
-  const [email, setEmail] = useState("");
-  const [password, setPassword] = useState("");
   const [error, setError] = useState("");
 
   useEffect(() => {
@@ -20,75 +22,41 @@ export default function LoginPage() {
     }
   }, [router]);
 
-  function handleSubmit(event: FormEvent<HTMLFormElement>) {
-    event.preventDefault();
+  async function handleLogin(
+    values: ILoginFormValues,
+    { setSubmitting }: FormikHelpers<ILoginFormValues>,
+  ) {
     setError("");
 
-    if (!email || !password) {
-      setError("Ingresa correo y contrasena.");
+    const result = loginUser(values.email, values.password);
+    if (!result.ok) {
+      setError(result.message);
+      setSubmitting(false);
       return;
     }
 
-    const result = loginUser(email, password);
-    if (!result.ok) {
-      setError(result.message);
-      return;
-    }
+    await hydrateLoggedInUserCart(result.user.id);
 
     if (result.user.role === "admin") {
       router.push("/admin/products");
+      setSubmitting(false);
       return;
     }
 
     router.push("/profile");
+    setSubmitting(false);
   }
 
   return (
     <PageShell>
-      <section className={`mx-auto w-full max-w-lg ${PULSE.card} p-8`}>
-        <p className={PULSE.kicker}>PULSE ACCOUNT</p>
-        <h1 className={`mt-2 ${PULSE.h1}`}>Iniciar sesion</h1>
+      <section className={`mx-auto w-full max-w-lg ${PULSE.card} p-6 sm:p-8`}>
+        <p className={PULSE.kicker}>PULSE CUENTA DE USUARIO</p>
+        <h1 className={`mt-2 ${PULSE.h1}`}>Iniciar sesión</h1>
         <p className={`mt-2 text-sm ${PULSE.body}`}>
           Accede a tu cuenta para gestionar tus compras.
         </p>
 
-        <form onSubmit={handleSubmit} className="mt-6 space-y-4">
-          <label className="block">
-            <span className="mb-1 block text-sm font-medium text-[#1C1E21]">
-              Correo
-            </span>
-            <input
-              type="email"
-              className={PULSE.input}
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
-              placeholder="tu@email.com"
-            />
-          </label>
-
-          <label className="block">
-            <span className="mb-1 block text-sm font-medium text-[#1C1E21]">
-              Contrasena
-            </span>
-            <input
-              type="password"
-              className={PULSE.input}
-              value={password}
-              onChange={(e) => setPassword(e.target.value)}
-              placeholder="Tu contrasena"
-            />
-          </label>
-
-          {error ? (
-            <p className="rounded-xl border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-600">
-              {error}
-            </p>
-          ) : null}
-
-          <button type="submit" className={PULSE.btnPrimaryBlock}>
-            Entrar
-          </button>
-        </form>
+        <LoginForm onSubmit={handleLogin} externalError={error} />
 
         <p className={`mt-4 text-sm ${PULSE.body}`}>
           No tienes cuenta?{" "}

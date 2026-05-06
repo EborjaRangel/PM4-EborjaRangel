@@ -1,11 +1,26 @@
 "use client";
 
-import { FormEvent, useMemo, useState } from "react";
+import { FormEvent, useCallback, useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import PageShell from "@/components/layout/PageShell";
 import { PULSE } from "@/lib/pulse";
-import { getMockCartTotals, mockCartItems } from "@/data/mockCart";
+import {
+  CART_UPDATED_EVENT,
+  ICartItem,
+  ICartTotals,
+  clearCart,
+  getCart,
+  getCartTotals,
+} from "@/lib/cartStorage";
+import axios from "axios";
+import { AUTH_CHANGED_EVENT, getCurrentUser } from "@/lib/authStorage";
+import type { PublicUser } from "@/interfaces/auth.interface";
+import {
+  recordPurchase,
+  type IPurchaseShippingSnapshot,
+} from "@/lib/purchaseHistory";
+import { resolveMexicoShippingCoords } from "@/lib/geocodeShipping";
 
 type CardBrand = "visa" | "mastercard" | "amex" | "unknown";
 
@@ -40,6 +55,30 @@ function luhnOk(pan: string): boolean {
   return sum % 10 === 0;
 }
 
+async function buildShippingSnapshot(
+  user: PublicUser,
+): Promise<IPurchaseShippingSnapshot | null> {
+  const address = user.address.trim();
+  const phone = user.phone.trim();
+  if (!address && !phone) return null;
+
+  let lat: number | undefined;
+  let lng: number | undefined;
+  if (address.length >= 5) {
+    const r = await resolveMexicoShippingCoords(address);
+    if (r) {
+      lat = r.lat;
+      lng = r.lng;
+    }
+  }
+
+  const snap: IPurchaseShippingSnapshot = { address, phone };
+  if (lat !== undefined && lng !== undefined) {
+    return { ...snap, lat, lng };
+  }
+  return snap;
+}
+
 function formatPan(value: string, brand: CardBrand) {
   const d = digitsOnly(value).slice(0, brand === "amex" ? 15 : 16);
   if (brand === "amex") {
@@ -54,16 +93,40 @@ function formatPan(value: string, brand: CardBrand) {
 
 export default function CheckoutPage() {
   const router = useRouter();
-  const { subtotal, shipping, taxes, total } = useMemo(
-    () => getMockCartTotals(),
-    [],
-  );
+  const [items, setItems] = useState<ICartItem[]>([]);
+  const [totals, setTotals] = useState<ICartTotals>({
+    subtotal: 0,
+    shipping: 0,
+    taxes: 0,
+    total: 0,
+  });
+  const [hydrated, setHydrated] = useState(false);
+
+  const sync = useCallback(() => {
+    const list = getCart();
+    setItems(list);
+    setTotals(getCartTotals(list));
+  }, []);
+
+  useEffect(() => {
+    sync();
+    setHydrated(true);
+    window.addEventListener(CART_UPDATED_EVENT, sync);
+    window.addEventListener(AUTH_CHANGED_EVENT, sync);
+    return () => {
+      window.removeEventListener(CART_UPDATED_EVENT, sync);
+      window.removeEventListener(AUTH_CHANGED_EVENT, sync);
+    };
+  }, [sync]);
+
+  const { subtotal, shipping, taxes, total } = totals;
 
   const [holder, setHolder] = useState("");
   const [pan, setPan] = useState("");
   const [expiry, setExpiry] = useState("");
   const [cvv, setCvv] = useState("");
   const [error, setError] = useState("");
+  const [submitting, setSubmitting] = useState(false);
 
   const brand = useMemo(() => detectBrand(pan), [pan]);
   const panFormatted = useMemo(() => formatPan(pan, brand), [pan, brand]);
@@ -81,9 +144,14 @@ export default function CheckoutPage() {
     setExpiry(d);
   }
 
-  function handleSubmit(e: FormEvent) {
+  async function handleSubmit(e: FormEvent) {
     e.preventDefault();
     setError("");
+
+    if (items.length === 0) {
+      setError("Tu carrito esta vacio. Agrega un producto antes de pagar.");
+      return;
+    }
 
     const panD = digitsOnly(pan);
     if (holder.trim().length < 3) {
@@ -111,7 +179,7 @@ export default function CheckoutPage() {
       setError("Vencimiento en formato MM/AA.");
       return;
     }
-       const mm = parseInt(exp.slice(0, 2), 10);
+    const mm = parseInt(exp.slice(0, 2), 10);
     const yy = parseInt(exp.slice(2, 4), 10);
     if (mm < 1 || mm > 12) {
       setError("Mes de vencimiento inválido.");
@@ -134,12 +202,39 @@ export default function CheckoutPage() {
       return;
     }
 
+    const user = getCurrentUser();
+    if (user) {
+      setSubmitting(true);
+      try {
+        const shipping = await buildShippingSnapshot(user);
+        await recordPurchase(
+          user.id,
+          user.email,
+          items.map((it) => ({ ...it })),
+          { ...totals },
+          shipping,
+        );
+      } catch (err) {
+        let msg =
+          "No se pudo registrar la compra en el servidor. Comprueba que el backend este en marcha.";
+        if (axios.isAxiosError(err)) {
+          const data = err.response?.data as { message?: string } | undefined;
+          if (data?.message) msg = data.message;
+        }
+        setError(msg);
+        setSubmitting(false);
+        return;
+      }
+      setSubmitting(false);
+    }
+
+    clearCart();
     router.push("/home?pago=ok");
   }
 
   return (
     <PageShell>
-      <section className={`mb-6 ${PULSE.card} p-8 sm:p-10`}>
+      <section className={`mb-6 ${PULSE.card} p-6 sm:p-10`}>
         <p className={PULSE.kicker}>PAGO SEGURO PULSE</p>
         <h1 className={`mt-2 ${PULSE.h1}`}>Pagar con tarjeta</h1>
         <p className={`mt-3 max-w-2xl ${PULSE.body}`}>
@@ -149,6 +244,26 @@ export default function CheckoutPage() {
             Demostración: no se cobra ni se envían datos a un procesador real.
           </span>
         </p>
+        {hydrated ? (
+          getCurrentUser() ? (
+            <p className={`mt-3 text-xs ${PULSE.body}`}>
+              Al pagar, guardaremos esta compra en el servidor; aparecera en{" "}
+              <Link href="/mis-compras" className={PULSE.link}>
+                Mis compras
+              </Link>
+              .
+            </p>
+          ) : (
+            <p className="mt-3 rounded-xl border border-amber-200 bg-amber-50 px-3 py-2 text-xs text-amber-900">
+              <strong className="font-semibold">Consejo:</strong> inicia sesión
+              para que tu compra quede registrada en tu historial (
+              <Link href="/login" className={PULSE.link}>
+                Login
+              </Link>
+              ).
+            </p>
+          )
+        ) : null}
       </section>
 
       <div className="grid gap-6 lg:grid-cols-[1.2fr_1fr]">
@@ -251,8 +366,12 @@ export default function CheckoutPage() {
               </p>
             ) : null}
 
-            <button type="submit" className={PULSE.btnPrimaryBlock}>
-              Pagar ${total.toFixed(2)}
+            <button
+              type="submit"
+              className={PULSE.btnPrimaryBlock}
+              disabled={submitting}
+            >
+              {submitting ? "Guardando..." : `Pagar $${total.toFixed(2)}`}
             </button>
           </form>
 
@@ -266,22 +385,31 @@ export default function CheckoutPage() {
 
         <aside className={`h-fit ${PULSE.card} p-6`}>
           <h2 className={PULSE.h2}>Resumen</h2>
-          <ul className="mt-4 space-y-2 text-sm text-[#65676B]">
-            {mockCartItems.map((item) => (
-              <li
-                key={item.id}
-                className="flex justify-between gap-2 border-b border-[#1877F2]/10 py-2 last:border-0"
-              >
-                <span>
-                  {item.name}{" "}
-                  <span className="text-xs">×{item.qty}</span>
-                </span>
-                <span className="shrink-0 font-medium text-[#1C1E21]">
-                  ${(item.price * item.qty).toFixed(2)}
-                </span>
-              </li>
-            ))}
-          </ul>
+          {hydrated && items.length === 0 ? (
+            <p className="mt-4 text-sm text-[#65676B]">
+              Tu carrito esta vacio.{" "}
+              <Link href="/home" className={PULSE.link}>
+                Ir al catalogo
+              </Link>
+            </p>
+          ) : (
+            <ul className="mt-4 space-y-2 text-sm text-[#65676B]">
+              {items.map((item) => (
+                <li
+                  key={item.id}
+                  className="flex justify-between gap-2 border-b border-[#1877F2]/10 py-2 last:border-0"
+                >
+                  <span>
+                    {item.name}{" "}
+                    <span className="text-xs">×{item.qty}</span>
+                  </span>
+                  <span className="shrink-0 font-medium text-[#1C1E21]">
+                    ${(item.price * item.qty).toFixed(2)}
+                  </span>
+                </li>
+              ))}
+            </ul>
+          )}
           <div className="mt-4 space-y-2 border-t border-[#1877F2]/10 pt-4 text-sm">
             <div className="flex justify-between text-[#65676B]">
               <span>Subtotal</span>

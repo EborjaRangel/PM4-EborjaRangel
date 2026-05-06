@@ -24,7 +24,7 @@ export default async function HomePage({ searchParams }: HomePageProps) {
           Gracias por tu compra en PULSE (demo: no se procesó un cobro real).
         </div>
       ) : null}
-      <section className={`${PULSE.card} p-8 sm:p-10`}>
+      <section className={`${PULSE.card} p-6 sm:p-10`}>
         <p className={PULSE.kicker}>CATÁLOGO OFICIAL PULSE</p>
         <h1 className={`mt-3 ${PULSE.h1}`}>Home ecommerce profesional</h1>
         <p className={`mt-3 max-w-3xl ${PULSE.body}`}>

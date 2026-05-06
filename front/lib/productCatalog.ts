@@ -1,9 +1,11 @@
+import axios from "axios";
 import { IProduct } from "@/interfaces/product.interface";
-import { mockProducts, productImageUrlForId } from "@/data/mockProducts";
 
-const EXTRA_PRODUCTS_KEY = "pulse_admin_products";
+export const PRODUCTS_API_URL = "http://localhost:3000/products";
 
 export const CATALOG_UPDATED_EVENT = "pulse-catalog-updated";
+
+export const MAX_PRODUCT_IMAGES = 5;
 
 export function notifyCatalogUpdated() {
   if (typeof window !== "undefined") {
@@ -11,47 +13,27 @@ export function notifyCatalogUpdated() {
   }
 }
 
-function canUseStorage() {
-  return typeof window !== "undefined";
+/** Trae el catálogo desde el backend (`GET /products`). */
+export async function fetchProducts(): Promise<IProduct[]> {
+  const res = await axios.get<IProduct[]>(PRODUCTS_API_URL);
+  return Array.isArray(res.data) ? res.data : [];
 }
 
-function readExtraProducts(): IProduct[] {
-  if (!canUseStorage()) return [];
-  const raw = localStorage.getItem(EXTRA_PRODUCTS_KEY);
-  if (!raw) return [];
-  try {
-    const parsed = JSON.parse(raw) as IProduct[];
-    return Array.isArray(parsed) ? parsed : [];
-  } catch {
-    return [];
-  }
+/** Trae un producto por id (`GET /products/:id`). */
+export async function fetchProductById(id: number): Promise<IProduct> {
+  const res = await axios.get<IProduct>(`${PRODUCTS_API_URL}/${id}`);
+  return res.data;
 }
 
-function saveExtraProducts(products: IProduct[]) {
-  if (!canUseStorage()) return;
-  localStorage.setItem(EXTRA_PRODUCTS_KEY, JSON.stringify(products));
-}
-
-/** Catálogo base (semilla) + productos dados de alta por el administrador en este navegador. */
-export function getCatalogProducts(): IProduct[] {
-  const extras = readExtraProducts();
-  const map = new Map<number, IProduct>();
-  for (const p of mockProducts) map.set(p.id, p);
-  for (const p of extras) map.set(p.id, p);
-  return Array.from(map.values()).sort((a, b) => a.id - b.id);
-}
-
-export function getNextProductId(): number {
-  const all = getCatalogProducts();
-  if (!all.length) return 1;
-  return Math.max(...all.map((p) => p.id)) + 1;
-}
-
-export type NewProductFields = Omit<IProduct, "id" | "image"> & {
+export type NewProductFields = Omit<IProduct, "id" | "image" | "images"> & {
   image?: string;
+  images?: string[];
 };
 
-export function addAdminProduct(fields: NewProductFields): { ok: true; product: IProduct } | { ok: false; message: string } {
+/** Crea un producto contra el backend (`POST /products`). */
+export async function addAdminProduct(
+  fields: NewProductFields
+): Promise<{ ok: true; product: IProduct } | { ok: false; message: string }> {
   const name = fields.name.trim();
   const description = fields.description.trim();
   if (!name) return { ok: false, message: "El nombre es obligatorio." };
@@ -66,27 +48,42 @@ export function addAdminProduct(fields: NewProductFields): { ok: true; product: 
     return { ok: false, message: "Selecciona una categoría válida." };
   }
 
-  const id = getNextProductId();
-  const imageRaw = fields.image?.trim() ?? "";
-  const image = imageRaw || productImageUrlForId(id);
+  const cleanedImages = (fields.images ?? [])
+    .map((u) => (u ?? "").toString().trim())
+    .filter((u) => u.length > 0)
+    .slice(0, MAX_PRODUCT_IMAGES);
 
-  const product: IProduct = {
-    id,
+  if (cleanedImages.length > MAX_PRODUCT_IMAGES) {
+    return {
+      ok: false,
+      message: `Máximo ${MAX_PRODUCT_IMAGES} imágenes por producto.`,
+    };
+  }
+
+  const cover = fields.image?.trim() || cleanedImages[0] || undefined;
+
+  const body = {
     name,
     description,
     price: fields.price,
     stock: fields.stock,
     categoryId: fields.categoryId,
-    image,
+    image: cover,
+    images: cleanedImages.length > 0 ? cleanedImages : undefined,
   };
 
-  const extras = readExtraProducts();
-  extras.push(product);
-  saveExtraProducts(extras);
-  notifyCatalogUpdated();
-  return { ok: true, product };
-}
-
-export function getAdminOnlyProducts(): IProduct[] {
-  return readExtraProducts();
+  try {
+    const res = await axios.post<IProduct>(PRODUCTS_API_URL, body);
+    notifyCatalogUpdated();
+    return { ok: true, product: res.data };
+  } catch (err: unknown) {
+    let message = "Error guardando producto.";
+    if (axios.isAxiosError(err)) {
+      const data = err.response?.data as { message?: string } | undefined;
+      message = data?.message ?? err.message ?? message;
+    } else if (err instanceof Error) {
+      message = err.message;
+    }
+    return { ok: false, message };
+  }
 }

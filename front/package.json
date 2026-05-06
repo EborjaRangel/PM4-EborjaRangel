@@ -9,12 +9,20 @@
     "lint": "eslint"
   },
   "dependencies": {
-    "next": "16.2.0",
+    "@react-google-maps/api": "^2.20.8",
+    "@types/google.maps": "^3.64.0",
+    "axios": "^1.16.0",
+    "formik": "^2.4.9",
+    "leaflet": "^1.9.4",
+    "next": "^16.2.5",
     "react": "19.2.4",
-    "react-dom": "19.2.4"
+    "react-dom": "19.2.4",
+    "react-leaflet": "^5.0.0",
+    "yup": "^1.7.1"
   },
   "devDependencies": {
     "@tailwindcss/postcss": "^4",
+    "@types/leaflet": "^1.9.21",
     "@types/node": "^20",
     "@types/react": "^19",
     "@types/react-dom": "^19",

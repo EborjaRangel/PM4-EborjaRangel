@@ -26,10 +26,18 @@ function DashboardPage() {
     }
   }, [router, currentUser, mounted]);
 
+  const visibleUsers = useMemo(() => {
+    if (!currentUser) return [];
+    if (currentUser.role === "admin") return users;
+    return users.filter((u) => u.id === currentUser.id);
+  }, [users, currentUser]);
+
   const mostActiveUser = useMemo(() => {
-    if (!users.length) return null;
-    return [...users].sort((a, b) => b.loginCount - a.loginCount)[0];
-  }, [users]);
+    if (!visibleUsers.length) return null;
+    return [...visibleUsers].sort((a, b) => b.loginCount - a.loginCount)[0];
+  }, [visibleUsers]);
+
+  const isAdmin = currentUser?.role === "admin";
 
   if (!mounted || !currentUser) {
     return (
@@ -41,20 +49,34 @@ function DashboardPage() {
 
   return (
     <PageShell>
-      <section className={`${PULSE.card} p-8`}>
-        <p className={PULSE.kicker}>ADMIN PANEL</p>
-        <h1 className={`mt-2 ${PULSE.h1}`}>Dashboard de usuarios</h1>
+      <section className={`${PULSE.card} p-6 sm:p-8`}>
+        <p className={PULSE.kicker}>
+          {isAdmin ? "ADMIN PANEL" : "TU RESUMEN"}
+        </p>
+        <h1 className={`mt-2 ${PULSE.h1}`}>
+          {isAdmin ? "Dashboard de usuarios" : "Tu dashboard"}
+        </h1>
         <p className={`mt-2 text-sm ${PULSE.body}`}>
-          Vista general de usuarios registrados y sesion actual. Los tres clientes
-          de demo (María, Carlos, Ana) usan la contrasena{" "}
-          <span className="font-mono text-[#1C1E21]">demo123</span>.
+          {isAdmin ? (
+            <>
+              Vista general de usuarios registrados y sesion actual. Los tres clientes
+              de demo (María, Carlos, Ana) usan la contrasena{" "}
+              <span className="font-mono text-[#1C1E21]">demo123</span>.
+            </>
+          ) : (
+            <>
+              Solo ves tus propios datos de cuenta. El rol administrador puede ver el listado completo.
+            </>
+          )}
         </p>
 
         <div className="mt-6 grid gap-4 md:grid-cols-3">
           <article className={PULSE.surfaceMuted}>
-            <p className="text-xs text-[#65676B]">Usuarios registrados</p>
+            <p className="text-xs text-[#65676B]">
+              {isAdmin ? "Usuarios registrados" : "Cuentas visibles"}
+            </p>
             <p className="mt-1 text-2xl font-bold text-[#1C1E21]">
-              {users.length}
+              {visibleUsers.length}
             </p>
           </article>
           <article className={PULSE.surfaceMuted}>
@@ -89,7 +111,7 @@ function DashboardPage() {
               </tr>
             </thead>
             <tbody>
-              {users.map((user) => {
+              {visibleUsers.map((user) => {
                 const isCurrent = user.id === currentUser.id;
                 return (
                   <tr

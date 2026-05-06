@@ -1,13 +1,16 @@
 "use client";
 
+import Link from "next/link";
 import { FormEvent, useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import {
+  AUTH_CHANGED_EVENT,
   getCurrentUser,
   logoutUser,
   updateCurrentUserPassword,
 } from "@/lib/authStorage";
 import { PublicUser } from "@/interfaces/auth.interface";
+import ProfileContactForm from "@/components/ProfileContactForm/ProfileContactForm";
 import PageShell from "@/components/layout/PageShell";
 import { PULSE } from "@/lib/pulse";
 
@@ -20,10 +23,15 @@ export default function ProfilePage() {
   const [confirmNewPassword, setConfirmNewPassword] = useState("");
   const [error, setError] = useState("");
   const [success, setSuccess] = useState("");
-
   useEffect(() => {
-    setUser(getCurrentUser());
+    const sync = () => {
+      const current = getCurrentUser();
+      setUser(current);
+    };
+    sync();
     setMounted(true);
+    window.addEventListener(AUTH_CHANGED_EVENT, sync);
+    return () => window.removeEventListener(AUTH_CHANGED_EVENT, sync);
   }, []);
 
   useEffect(() => {
@@ -44,17 +52,17 @@ export default function ProfilePage() {
     setSuccess("");
 
     if (!currentPassword || !newPassword || !confirmNewPassword) {
-      setError("Completa todos los campos para cambiar la contrasena.");
+      setError("Completa todos los campos para cambiar la contraseña.");
       return;
     }
 
     if (newPassword.length < 6) {
-      setError("La nueva contrasena debe tener al menos 6 caracteres.");
+      setError("La nueva contraseña debe tener al menos 6 caracteres.");
       return;
     }
 
     if (newPassword !== confirmNewPassword) {
-      setError("La confirmacion no coincide con la nueva contrasena.");
+      setError("La confirmacion no coincide con la nueva contraseña.");
       return;
     }
 
@@ -64,7 +72,7 @@ export default function ProfilePage() {
       return;
     }
 
-    setSuccess("Contrasena actualizada correctamente.");
+    setSuccess("Contraseña actualizada correctamente.");
     setCurrentPassword("");
     setNewPassword("");
     setConfirmNewPassword("");
@@ -81,9 +89,15 @@ export default function ProfilePage() {
   return (
     <PageShell>
       <section className="grid gap-6 lg:grid-cols-2">
-        <article className={`${PULSE.card} p-8`}>
+        <article className={`${PULSE.card} p-6 sm:p-8`}>
           <p className={PULSE.kicker}>MI PERFIL</p>
           <h1 className={`mt-2 ${PULSE.h1}`}>Datos del usuario</h1>
+
+          <p className="mt-4">
+            <Link href="/mis-compras" className={PULSE.link}>
+              Ver historial de mis compras
+            </Link>
+          </p>
 
           <div className="mt-6 space-y-4">
             <div className={PULSE.surfaceMuted}>
@@ -116,6 +130,20 @@ export default function ProfilePage() {
             </div>
           </div>
 
+          <div className="mt-8 border-t border-[#1877F2]/12 pt-8">
+            <p className={PULSE.kicker}>ENVÍO Y CONTACTO</p>
+            <h2 className={`mt-2 ${PULSE.h2}`}>Dirección de entrega</h2>
+            <p className={`mt-2 text-sm ${PULSE.body}`}>
+              Estos datos se muestran en tu carrito y los usamos como referencia
+              para envío y comunicación del pedido.
+            </p>
+
+            <ProfileContactForm
+              initialAddress={user.address ?? ""}
+              initialPhone={user.phone ?? ""}
+            />
+          </div>
+
           <button
             type="button"
             onClick={handleLogout}
@@ -125,16 +153,16 @@ export default function ProfilePage() {
           </button>
         </article>
 
-        <article className={`${PULSE.card} p-8`}>
+        <article className={`${PULSE.card} p-6 sm:p-8`}>
           <p className={PULSE.kicker}>SEGURIDAD</p>
           <h2 className="mt-2 text-2xl font-bold text-[#1C1E21]">
-            Cambiar contrasena
+            Cambiar contraseña
           </h2>
 
           <form onSubmit={handlePasswordChange} className="mt-6 space-y-4">
             <label className="block">
               <span className="mb-1 block text-sm font-medium text-[#1C1E21]">
-                Contrasena actual
+                Contraseña actual
               </span>
               <input
                 type="password"
@@ -146,7 +174,7 @@ export default function ProfilePage() {
 
             <label className="block">
               <span className="mb-1 block text-sm font-medium text-[#1C1E21]">
-                Nueva contrasena
+                Nueva contraseña
               </span>
               <input
                 type="password"
@@ -158,7 +186,7 @@ export default function ProfilePage() {
 
             <label className="block">
               <span className="mb-1 block text-sm font-medium text-[#1C1E21]">
-                Confirmar nueva contrasena
+                Confirmar nueva contraseña
               </span>
               <input
                 type="password"
@@ -180,7 +208,7 @@ export default function ProfilePage() {
             ) : null}
 
             <button type="submit" className={PULSE.btnPrimaryBlock}>
-              Guardar nueva contrasena
+              Guardar nueva contraseña
             </button>
           </form>
         </article>

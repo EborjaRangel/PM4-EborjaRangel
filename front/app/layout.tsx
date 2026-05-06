@@ -1,18 +1,22 @@
 import type { Metadata } from "next";
-import { Geist, Geist_Mono } from "next/font/google";
+import { Bebas_Neue, Montserrat } from "next/font/google";
+//import { Geist, Geist_Mono } from "next/font/google";
 import "./globals.css";
 import Navbar from "@/components/layout/Navbar";
 import Footer from "@/components/layout/Footer";
 import AuthBootstrap from "@/components/AuthBootstrap";
+import CartRemoteHydrate from "@/components/CartRemoteHydrate";
 
-const geistSans = Geist({
-  variable: "--font-geist-sans",
+const montserrat = Montserrat({
+  variable: "--font-body",
   subsets: ["latin"],
+  weight:["400", "500", "600", "700"],
 });
 
-const geistMono = Geist_Mono({
-  variable: "--font-geist-mono",
+const bebasNeue = Bebas_Neue({
+  variable: "--font-display",
   subsets: ["latin"],
+  weight: "400",
 });
 
 export const metadata: Metadata = {
@@ -28,10 +32,11 @@ export default function RootLayout({
   return (
     <html
       lang="en"
-      className={`${geistSans.variable} ${geistMono.variable} h-full antialiased`}
+      className={`${montserrat.variable} ${bebasNeue.variable} h-full antialiased`}
     >
       <body className="flex min-h-screen flex-col text-[#1C1E21] antialiased">
         <AuthBootstrap />
+        <CartRemoteHydrate />
         <Navbar />
         <main className="flex-1">{children}</main>
         <Footer />

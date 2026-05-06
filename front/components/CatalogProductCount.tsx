@@ -1,19 +1,30 @@
 "use client";
 
-import { useEffect, useState } from "react";
-import { mockProducts } from "@/data/mockProducts";
-import { CATALOG_UPDATED_EVENT, getCatalogProducts } from "@/lib/productCatalog";
+import { useCallback, useEffect, useState } from "react";
+import { CATALOG_UPDATED_EVENT, fetchProducts } from "@/lib/productCatalog";
 import { PULSE } from "@/lib/pulse";
 
 export default function CatalogProductCount() {
-  const [count, setCount] = useState(mockProducts.length);
+  const [count, setCount] = useState<number | null>(null);
+
+  const sync = useCallback(async () => {
+    try {
+      const list = await fetchProducts();
+      setCount(list.length);
+    } catch {
+      setCount(0);
+    }
+  }, []);
 
   useEffect(() => {
-    const sync = () => setCount(getCatalogProducts().length);
     sync();
     window.addEventListener(CATALOG_UPDATED_EVENT, sync);
     return () => window.removeEventListener(CATALOG_UPDATED_EVENT, sync);
-  }, []);
+  }, [sync]);
 
-  return <span className={PULSE.pill}>{count} productos disponibles</span>;
+  return (
+    <span className={PULSE.pill}>
+      {count === null ? "…" : count} productos disponibles
+    </span>
+  );
 }

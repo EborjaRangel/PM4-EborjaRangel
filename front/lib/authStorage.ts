@@ -1,4 +1,5 @@
 import { IUser, PublicUser, UserRole } from "@/interfaces/auth.interface";
+import { normalizePhoneDigits } from "@/lib/deliveryContact.validation";
 
 const USERS_KEY = "pulse_users";
 const CURRENT_USER_KEY = "pulse_current_user_id";
@@ -29,6 +30,8 @@ function normalizeUser(user: IUser): IUser {
     role: normalizeRole(user.role),
     loginCount: typeof user.loginCount === "number" ? user.loginCount : 1,
     lastLoginAt: user.lastLoginAt || user.createdAt,
+    address: typeof user.address === "string" ? user.address : "",
+    phone: typeof user.phone === "string" ? user.phone : "",
   };
 }
 
@@ -55,9 +58,16 @@ function toPublicUser(user: IUser): PublicUser {
   return publicUser;
 }
 
-export function registerUser(fullName: string, email: string, password: string) {
+export function registerUser(
+  fullName: string,
+  email: string,
+  password: string,
+  address = "",
+  phone = "",
+) {
   const users = readUsers();
   const normalizedEmail = email.trim().toLowerCase();
+  const normalizedPassword = password.trim();
   const existing = users.find((u) => u.email.toLowerCase() === normalizedEmail);
 
   if (existing) {
@@ -68,7 +78,9 @@ export function registerUser(fullName: string, email: string, password: string) 
     id: crypto.randomUUID(),
     fullName: fullName.trim(),
     email: normalizedEmail,
-    password,
+    password: normalizedPassword,
+    address: address.trim(),
+    phone: normalizePhoneDigits(phone),
     role: "user",
     createdAt: new Date().toISOString(),
     loginCount: 1,
@@ -88,8 +100,11 @@ export function registerUser(fullName: string, email: string, password: string) 
 export function loginUser(email: string, password: string) {
   const users = readUsers();
   const normalizedEmail = email.trim().toLowerCase();
+  const normalizedPassword = password.trim();
   const userIndex = users.findIndex(
-    (u) => u.email.toLowerCase() === normalizedEmail && u.password === password,
+    (u) =>
+      u.email.toLowerCase() === normalizedEmail &&
+      u.password === normalizedPassword,
   );
   const user = userIndex >= 0 ? users[userIndex] : undefined;
 
@@ -141,6 +156,8 @@ export function ensureBuiltInAdminAccount() {
     fullName: "Administrador PULSE",
     email: BUILT_IN_ADMIN_EMAIL,
     password: BUILT_IN_ADMIN_PASSWORD,
+    address: "",
+    phone: "",
     role: "admin",
     createdAt: new Date().toISOString(),
     loginCount: 0,
@@ -200,6 +217,8 @@ export function ensureDemoClientUsers() {
       fullName: seed.fullName,
       email,
       password: seed.password,
+      address: "",
+      phone: "",
       role: "user",
       createdAt,
       loginCount: seed.loginCount,
@@ -233,5 +252,51 @@ export function updateCurrentUserPassword(currentPassword: string, newPassword: 
 
   users[userIndex].password = newPassword;
   saveUsers(users);
+  return { ok: true as const };
+}
+
+export function updateCurrentUserContact(address: string, phone: string) {
+  if (!canUseStorage()) {
+    return { ok: false as const, message: "No se pudo guardar." };
+  }
+
+  const currentUserId = localStorage.getItem(CURRENT_USER_KEY);
+  if (!currentUserId) {
+    return { ok: false as const, message: "No hay sesion activa." };
+  }
+
+  const users = readUsers();
+  const userIndex = users.findIndex((u) => u.id === currentUserId);
+  if (userIndex === -1) {
+    return { ok: false as const, message: "Usuario no encontrado." };
+  }
+
+  users[userIndex].address = address.trim();
+  users[userIndex].phone = normalizePhoneDigits(phone);
+  saveUsers(users);
+  notifyAuthChanged();
+  return { ok: true as const };
+}
+
+/** Solo actualiza dirección de entrega (sin tocar teléfono). Útil desde mapa / wizard. */
+export function updateCurrentUserAddressOnly(address: string) {
+  if (!canUseStorage()) {
+    return { ok: false as const, message: "No se pudo guardar." };
+  }
+
+  const currentUserId = localStorage.getItem(CURRENT_USER_KEY);
+  if (!currentUserId) {
+    return { ok: false as const, message: "No hay sesion activa." };
+  }
+
+  const users = readUsers();
+  const userIndex = users.findIndex((u) => u.id === currentUserId);
+  if (userIndex === -1) {
+    return { ok: false as const, message: "Usuario no encontrado." };
+  }
+
+  users[userIndex].address = address.trim();
+  saveUsers(users);
+  notifyAuthChanged();
   return { ok: true as const };
 }

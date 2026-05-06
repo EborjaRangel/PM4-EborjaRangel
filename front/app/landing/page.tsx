@@ -32,7 +32,7 @@ function LandingPage() {
         ))}
       </section>
 
-      <section className={`relative overflow-hidden ${PULSE.card} p-8 sm:p-10 lg:p-12`}>
+      <section className={`relative overflow-hidden ${PULSE.card} p-6 sm:p-10 lg:p-12`}>
         <div
           className="pointer-events-none absolute inset-x-0 top-0 h-1 bg-gradient-to-r from-[#1877F2] via-[#1DA1F2] to-[#1877F2]"
           aria-hidden
@@ -114,7 +114,7 @@ function LandingPage() {
       </section>
 
       <section
-        className={`mt-10 ${PULSE.card} p-8 sm:p-10 lg:p-12`}
+        className={`mt-10 ${PULSE.card} p-6 sm:p-10 lg:p-12`}
         aria-labelledby="product-page-audit-heading"
       >
         <p className={PULSE.kicker}>AUDITORÍA UX</p>

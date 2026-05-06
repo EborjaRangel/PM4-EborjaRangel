@@ -31,6 +31,9 @@ function Footer() {
           <Link href="/cart" className="transition hover:text-[#1877F2]">
             Carrito
           </Link>
+          <Link href="/mis-compras" className="transition hover:text-[#1877F2]">
+            Mis compras
+          </Link>
           <Link href="/checkout" className="transition hover:text-[#1877F2]">
             Pago
           </Link>
