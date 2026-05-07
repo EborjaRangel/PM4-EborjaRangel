@@ -3,21 +3,19 @@
  * Invitados no deben usar estos helpers.
  */
 import axios from "axios";
+import { resolveApiOrigin } from "@/lib/resolveApiOrigin";
 
-const API_ORIGIN =
-  typeof process !== "undefined" && process.env.NEXT_PUBLIC_API_URL
-    ? process.env.NEXT_PUBLIC_API_URL.replace(/\/$/, "")
-    : "http://localhost:3000";
-
-export const CART_API_URL = `${API_ORIGIN}/cart`;
+function cartBase(): string {
+  return `${resolveApiOrigin()}/cart`;
+}
 
 /** Respuesta GET /cart/user/:id — items sin normalizar (lo parsea cartStorage). */
 export async function fetchRemoteCartRaw(
-  clientUserId: string
+  clientUserId: string,
 ): Promise<unknown[] | null> {
   try {
     const res = await axios.get<{ items?: unknown }>(
-      `${CART_API_URL}/user/${encodeURIComponent(clientUserId)}`
+      `${cartBase()}/user/${encodeURIComponent(clientUserId)}`,
     );
     const arr = res.data?.items;
     return Array.isArray(arr) ? arr : [];
@@ -28,10 +26,10 @@ export async function fetchRemoteCartRaw(
 
 export async function putRemoteCartPayload(
   clientUserId: string,
-  items: Array<Record<string, unknown>>
+  items: Array<Record<string, unknown>>,
 ): Promise<void> {
   await axios.put(
-    `${CART_API_URL}/user/${encodeURIComponent(clientUserId)}`,
-    { items }
+    `${cartBase()}/user/${encodeURIComponent(clientUserId)}`,
+    { items },
   );
 }

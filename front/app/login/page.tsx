@@ -4,7 +4,10 @@ import Link from "next/link";
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { FormikHelpers } from "formik";
-import { getCurrentUser, loginUser } from "@/lib/authStorage";
+import {
+  getCurrentUser,
+  loginUser,
+} from "@/lib/authStorage";
 import { hydrateLoggedInUserCart } from "@/lib/cartStorage";
 import LoginForm from "@/components/LoginForm/LoginForm";
 import PageShell from "@/components/layout/PageShell";
@@ -28,14 +31,14 @@ export default function LoginPage() {
   ) {
     setError("");
 
-    const result = loginUser(values.email, values.password);
+    const result = await loginUser(values.email, values.password);
     if (!result.ok) {
       setError(result.message);
       setSubmitting(false);
       return;
     }
 
-    await hydrateLoggedInUserCart(result.user.id);
+    await hydrateLoggedInUserCart(result.user.id).catch(() => {});
 
     if (result.user.role === "admin") {
       router.push("/admin/products");

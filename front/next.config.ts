@@ -7,7 +7,21 @@ import { loadEnvConfig } from "@next/env";
 const frontRoot = path.dirname(fileURLToPath(import.meta.url));
 loadEnvConfig(frontRoot);
 
+const proxyTargetRaw =
+  process.env.PULSE_PROXY_TARGET ||
+  process.env.PULSE_BACKEND_URL ||
+  "http://127.0.0.1:3000";
+const pulseProxyDestination = `${proxyTargetRaw.replace(/\/$/, "")}/:path*`;
+
 const nextConfig: NextConfig = {
+  async rewrites() {
+    return [
+      {
+        source: "/pulse-api-proxy/:path*",
+        destination: pulseProxyDestination,
+      },
+    ];
+  },
   images: {
     remotePatterns: [
       {

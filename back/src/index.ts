@@ -1,9 +1,10 @@
-import { PORT } from "./config/envs";
+import { HOST, PORT } from "./config/envs";
 import app from "./server";
 import "reflect-metadata"
 import { AppDataSource } from "./config/dataSource";
 import { preLoadCategories } from "./helpers/preLoadCategories";
 import { preLoadProducts } from "./helpers/preLoadProducts";
+import { preLoadAdminUser } from "./helpers/preLoadAdminUser";
 
 const initialize = async () => {
     console.log("Initializing server");
@@ -11,10 +12,17 @@ const initialize = async () => {
     console.log("Database initialized");
     await preLoadCategories();
     await preLoadProducts();
-    app.listen(PORT, () => {
-        console.log(`Server running on port ${PORT}`);
+    await preLoadAdminUser();
+    app.listen(PORT, HOST, () => {
+        console.log(`Server running on http://${HOST}:${PORT}`);
     });
 }
 
-initialize();
+initialize().catch((err) => {
+    console.error("[FATAL] No se pudo conectar a PostgreSQL:", err?.message ?? err);
+    console.error(
+        "Revisa DATABASE_URL o DB_HOST/DB_USER/DB_PASSWORD/DB_NAME en .env (y DB_SSL si tu proveedor exige TLS)."
+    );
+    process.exit(1);
+});
 

@@ -32,7 +32,7 @@ export default function ProfileContactForm({
       { setSubmitting, setStatus }: FormikHelpers<IContactDeliveryFormValues>,
     ) => {
       setStatus(undefined);
-      const result = updateCurrentUserContact(
+      const result = await updateCurrentUserContact(
         values.address.trim(),
         normalizePhoneDigits(values.phone),
       );

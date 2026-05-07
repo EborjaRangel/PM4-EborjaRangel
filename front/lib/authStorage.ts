@@ -1,10 +1,21 @@
-import { IUser, PublicUser, UserRole } from "@/interfaces/auth.interface";
+import axios from "axios";
+import type { PublicUser, UserRole } from "@/interfaces/auth.interface";
 import { normalizePhoneDigits } from "@/lib/deliveryContact.validation";
+import {
+  AUTH_TOKEN_LS_KEY,
+  LEGACY_CURRENT_USER_KEY,
+  LEGACY_USERS_KEY,
+  SESSION_PROFILE_LS_KEY,
+} from "@/lib/authConstants";
+import {
+  fetchMyProfileFromApi,
+  loginWithApi,
+  mapAuthApiError,
+  patchMyProfile,
+  registerWithApi,
+} from "@/lib/authApi";
 
-const USERS_KEY = "pulse_users";
-const CURRENT_USER_KEY = "pulse_current_user_id";
-
-/** Cuenta de demostración creada automáticamente para gestionar el catálogo. */
+/** Referencia única para el admin demo del seed en Postgres (`preLoadAdminUser`). */
 export const BUILT_IN_ADMIN_EMAIL = "admin@pulse.local";
 export const BUILT_IN_ADMIN_PASSWORD = "admin123";
 
@@ -20,283 +31,282 @@ function canUseStorage() {
   return typeof window !== "undefined";
 }
 
-function normalizeRole(role: unknown): UserRole {
+/** Elimina claves donde se guardaban contraseñas en el navegador (versiones anteriores). */
+export function migrateLegacyAuthStorage() {
+  if (!canUseStorage()) return;
+  localStorage.removeItem(LEGACY_USERS_KEY);
+  localStorage.removeItem(LEGACY_CURRENT_USER_KEY);
+}
+
+export function getAuthToken(): string | null {
+  if (!canUseStorage()) return null;
+  return localStorage.getItem(AUTH_TOKEN_LS_KEY);
+}
+
+function setAuthToken(token: string | null) {
+  if (!canUseStorage()) return;
+  if (token) localStorage.setItem(AUTH_TOKEN_LS_KEY, token);
+  else localStorage.removeItem(AUTH_TOKEN_LS_KEY);
+}
+
+export function normalizeApiRole(role: unknown): UserRole {
   return role === "admin" ? "admin" : "user";
 }
 
-function normalizeUser(user: IUser): IUser {
+function toIso(raw: unknown, fallback: string): string {
+  if (typeof raw === "string" && raw.trim()) return raw.trim();
+  return fallback;
+}
+
+/** Convierte la respuesta del API en el modelo de perfil de la SPA (sin contraseña). */
+export function apiUserRecordToPublicUser(
+  data: Record<string, unknown>,
+): PublicUser {
+  const id = String(data.id ?? "").trim();
+  const emailNorm = String(data.email ?? "").trim().toLowerCase();
+  const nowIso = new Date().toISOString();
+  const fullName = String(data.name ?? data.fullName ?? "").trim();
+  const loginCountRaw = data.loginCount;
+  let loginCount = 0;
+  if (typeof loginCountRaw === "number" && Number.isFinite(loginCountRaw)) {
+    loginCount = Math.max(0, Math.floor(loginCountRaw));
+  } else if (
+    typeof loginCountRaw === "string" &&
+    Number.isFinite(Number(loginCountRaw))
+  ) {
+    loginCount = Math.max(0, Math.floor(Number(loginCountRaw)));
+  }
+
   return {
-    ...user,
-    role: normalizeRole(user.role),
-    loginCount: typeof user.loginCount === "number" ? user.loginCount : 1,
-    lastLoginAt: user.lastLoginAt || user.createdAt,
-    address: typeof user.address === "string" ? user.address : "",
-    phone: typeof user.phone === "string" ? user.phone : "",
+    id,
+    fullName,
+    email: emailNorm,
+    role: normalizeApiRole(data.role),
+    address: typeof data.address === "string" ? data.address : "",
+    phone:
+      typeof data.phone === "string"
+        ? normalizePhoneDigits(data.phone)
+        : "",
+    createdAt: toIso(data.createdAt, nowIso),
+    loginCount,
+    lastLoginAt: toIso(data.lastLoginAt ?? data.last_login_at, nowIso),
   };
 }
 
-function readUsers(): IUser[] {
-  if (!canUseStorage()) return [];
-  const raw = localStorage.getItem(USERS_KEY);
-  if (!raw) return [];
+/** Guarda sólo datos públicos de sesión + JWT; nunca credenciales. */
+export function persistSession(profile: PublicUser, token: string) {
+  if (!canUseStorage()) return;
+  localStorage.setItem(SESSION_PROFILE_LS_KEY, JSON.stringify(profile));
+  setAuthToken(token);
+  notifyAuthChanged();
+}
 
+function readSessionProfile(): PublicUser | null {
+  if (!canUseStorage()) return null;
+  const raw = localStorage.getItem(SESSION_PROFILE_LS_KEY);
+  if (!raw) return null;
   try {
-    const parsed = JSON.parse(raw) as IUser[];
-    return parsed.map(normalizeUser);
+    const o = JSON.parse(raw) as PublicUser;
+    if (!o || typeof o.id !== "string" || typeof o.email !== "string") {
+      return null;
+    }
+    return o;
   } catch {
-    return [];
+    return null;
   }
 }
 
-function saveUsers(users: IUser[]) {
+export function clearSession() {
   if (!canUseStorage()) return;
-  localStorage.setItem(USERS_KEY, JSON.stringify(users));
+  localStorage.removeItem(SESSION_PROFILE_LS_KEY);
+  setAuthToken(null);
+  notifyAuthChanged();
 }
 
-function toPublicUser(user: IUser): PublicUser {
-  const { password: _password, ...publicUser } = user;
-  return publicUser;
+export async function refreshSessionProfile(): Promise<boolean> {
+  if (!getAuthToken()?.trim()) {
+    clearSession();
+    return false;
+  }
+  try {
+    const res = await fetchMyProfileFromApi();
+    const pub = apiUserRecordToPublicUser(
+      res.data as Record<string, unknown>,
+    );
+    const t = getAuthToken();
+    if (!t) return false;
+    persistSession(pub, t);
+    return true;
+  } catch (e) {
+    if (axios.isAxiosError(e)) {
+      const st = e.response?.status;
+      if (st === 401 || st === 403) {
+        clearSession();
+        return false;
+      }
+      const hadLocal = Boolean(getAuthToken() && getCurrentUser());
+      if (!e.response && hadLocal) {
+        return true;
+      }
+      if (typeof st === "number" && st >= 500 && hadLocal) {
+        return true;
+      }
+    }
+    clearSession();
+    return false;
+  }
 }
 
-export function registerUser(
+export async function loginUser(
+  email: string,
+  password: string,
+): Promise<
+  { ok: true; user: PublicUser } | { ok: false; message: string }
+> {
+  const pwd = password.trim();
+  try {
+    const res = await loginWithApi(email, pwd);
+    if (!res.data?.login || !res.data.user || !res.data.token) {
+      return { ok: false, message: "Respuesta invalida del servidor." };
+    }
+    const pub = apiUserRecordToPublicUser(
+      res.data.user as Record<string, unknown>,
+    );
+    persistSession(pub, res.data.token.trim());
+    return { ok: true, user: pub };
+  } catch (e) {
+    if (axios.isAxiosError(e) && e.response) {
+      return { ok: false, message: mapAuthApiError(e) };
+    }
+    return {
+      ok: false,
+      message:
+        "Sin conexion con el servidor de cuentas. Comprueba el API en marcha.",
+    };
+  }
+}
+
+export async function registerUser(
   fullName: string,
   email: string,
   password: string,
   address = "",
   phone = "",
-) {
-  const users = readUsers();
-  const normalizedEmail = email.trim().toLowerCase();
-  const normalizedPassword = password.trim();
-  const existing = users.find((u) => u.email.toLowerCase() === normalizedEmail);
-
-  if (existing) {
-    return { ok: false as const, message: "Este correo ya esta registrado." };
+): Promise<{ ok: true; user: PublicUser } | { ok: false; message: string }> {
+  const name = fullName.trim();
+  const pwd = password.trim();
+  try {
+    await registerWithApi({
+      name,
+      email: email.trim(),
+      password: pwd,
+      address: address.trim(),
+      phone: normalizePhoneDigits(phone),
+    });
+    const loginRes = await loginWithApi(email, pwd);
+    if (!loginRes.data?.login || !loginRes.data.user || !loginRes.data.token) {
+      return {
+        ok: false,
+        message: "Respuesta invalida del servidor.",
+      };
+    }
+    const pub = apiUserRecordToPublicUser(
+      loginRes.data.user as Record<string, unknown>,
+    );
+    persistSession(pub, loginRes.data.token.trim());
+    return { ok: true, user: pub };
+  } catch (e) {
+    if (axios.isAxiosError(e) && e.response) {
+      return { ok: false, message: mapAuthApiError(e) };
+    }
+    return {
+      ok: false,
+      message:
+        "Sin conexion con el servidor de cuentas. Comprueba el API en marcha.",
+    };
   }
-
-  const newUser: IUser = {
-    id: crypto.randomUUID(),
-    fullName: fullName.trim(),
-    email: normalizedEmail,
-    password: normalizedPassword,
-    address: address.trim(),
-    phone: normalizePhoneDigits(phone),
-    role: "user",
-    createdAt: new Date().toISOString(),
-    loginCount: 1,
-    lastLoginAt: new Date().toISOString(),
-  };
-
-  users.push(newUser);
-  saveUsers(users);
-  if (canUseStorage()) {
-    localStorage.setItem(CURRENT_USER_KEY, newUser.id);
-    notifyAuthChanged();
-  }
-
-  return { ok: true as const, user: toPublicUser(newUser) };
-}
-
-export function loginUser(email: string, password: string) {
-  const users = readUsers();
-  const normalizedEmail = email.trim().toLowerCase();
-  const normalizedPassword = password.trim();
-  const userIndex = users.findIndex(
-    (u) =>
-      u.email.toLowerCase() === normalizedEmail &&
-      u.password === normalizedPassword,
-  );
-  const user = userIndex >= 0 ? users[userIndex] : undefined;
-
-  if (!user) {
-    return { ok: false as const, message: "Credenciales incorrectas." };
-  }
-
-  users[userIndex] = {
-    ...user,
-    loginCount: user.loginCount + 1,
-    lastLoginAt: new Date().toISOString(),
-  };
-  saveUsers(users);
-
-  if (canUseStorage()) {
-    localStorage.setItem(CURRENT_USER_KEY, user.id);
-    notifyAuthChanged();
-  }
-  return { ok: true as const, user: toPublicUser(users[userIndex]) };
 }
 
 export function getCurrentUser(): PublicUser | null {
-  if (!canUseStorage()) return null;
-  const currentUserId = localStorage.getItem(CURRENT_USER_KEY);
-  if (!currentUserId) return null;
-
-  const user = readUsers().find((u) => u.id === currentUserId);
-  return user ? toPublicUser(user) : null;
-}
-
-export function getAllUsers(): PublicUser[] {
-  return readUsers().map(toPublicUser);
+  return readSessionProfile();
 }
 
 export function logoutUser() {
-  if (!canUseStorage()) return;
-  localStorage.removeItem(CURRENT_USER_KEY);
-  notifyAuthChanged();
+  clearSession();
 }
 
-/** Garantiza una cuenta administrador local (solo demo). Idempotente. */
-export function ensureBuiltInAdminAccount() {
-  if (!canUseStorage()) return;
-  const users = readUsers();
-  if (users.some((u) => u.email.toLowerCase() === BUILT_IN_ADMIN_EMAIL)) return;
-
-  const newUser: IUser = {
-    id: crypto.randomUUID(),
-    fullName: "Administrador PULSE",
-    email: BUILT_IN_ADMIN_EMAIL,
-    password: BUILT_IN_ADMIN_PASSWORD,
-    address: "",
-    phone: "",
-    role: "admin",
-    createdAt: new Date().toISOString(),
-    loginCount: 0,
-    lastLoginAt: new Date().toISOString(),
-  };
-
-  users.push(newUser);
-  saveUsers(users);
-}
-
-/** Tres clientes de demostración para el dashboard (contraseña compartida `demo123`). Idempotente. */
-const DEMO_CLIENT_SEEDS: {
-  fullName: string;
-  email: string;
-  password: string;
-  loginCount: number;
-  daysSinceLogin: number;
-}[] = [
-  {
-    fullName: "María García",
-    email: "maria.garcia@demo.pulse",
-    password: "demo123",
-    loginCount: 14,
-    daysSinceLogin: 1,
-  },
-  {
-    fullName: "Carlos Vega",
-    email: "carlos.vega@demo.pulse",
-    password: "demo123",
-    loginCount: 6,
-    daysSinceLogin: 4,
-  },
-  {
-    fullName: "Ana López",
-    email: "ana.lopez@demo.pulse",
-    password: "demo123",
-    loginCount: 9,
-    daysSinceLogin: 2,
-  },
-];
-
-export function ensureDemoClientUsers() {
-  if (!canUseStorage()) return;
-  const users = readUsers();
-  let changed = false;
-  const dayMs = 86_400_000;
-
-  for (const seed of DEMO_CLIENT_SEEDS) {
-    const email = seed.email.toLowerCase();
-    if (users.some((u) => u.email.toLowerCase() === email)) continue;
-
-    const createdAt = new Date(Date.now() - dayMs * 45).toISOString();
-    const lastLoginAt = new Date(Date.now() - dayMs * seed.daysSinceLogin).toISOString();
-
-    users.push({
-      id: crypto.randomUUID(),
-      fullName: seed.fullName,
-      email,
-      password: seed.password,
-      address: "",
-      phone: "",
-      role: "user",
-      createdAt,
-      loginCount: seed.loginCount,
-      lastLoginAt,
+export async function updateCurrentUserPassword(
+  currentPassword: string,
+  newPassword: string,
+): Promise<{ ok: true } | { ok: false; message: string }> {
+  if (!getAuthToken()?.trim()) {
+    return { ok: false, message: "No hay sesion activa." };
+  }
+  try {
+    const { data } = await patchMyProfile({
+      currentPassword,
+      newPassword,
     });
-    changed = true;
+    const pub = apiUserRecordToPublicUser(data as Record<string, unknown>);
+    const token = getAuthToken();
+    if (!token)
+      return { ok: false, message: "No hay sesion activa." };
+    persistSession(pub, token);
+    return { ok: true };
+  } catch (e) {
+    if (axios.isAxiosError(e) && e.response) {
+      return { ok: false, message: mapAuthApiError(e) };
+    }
+    return { ok: false, message: "No se pudo actualizar la contraseña." };
   }
-
-  if (changed) saveUsers(users);
 }
 
-export function updateCurrentUserPassword(currentPassword: string, newPassword: string) {
-  if (!canUseStorage()) {
-    return { ok: false as const, message: "No se pudo actualizar la contrasena." };
+export async function updateCurrentUserContact(
+  address: string,
+  phone: string,
+): Promise<{ ok: true } | { ok: false; message: string }> {
+  if (!getAuthToken()?.trim()) {
+    return { ok: false, message: "No hay sesion activa." };
   }
-
-  const currentUserId = localStorage.getItem(CURRENT_USER_KEY);
-  if (!currentUserId) {
-    return { ok: false as const, message: "No hay sesion activa." };
+  try {
+    const { data } = await patchMyProfile({
+      address: address.trim(),
+      phone: normalizePhoneDigits(phone),
+    });
+    const pub = apiUserRecordToPublicUser(data as Record<string, unknown>);
+    const token = getAuthToken();
+    if (!token)
+      return { ok: false, message: "No hay sesion activa." };
+    persistSession(pub, token);
+    return { ok: true };
+  } catch (e) {
+    if (axios.isAxiosError(e) && e.response) {
+      return { ok: false, message: mapAuthApiError(e) };
+    }
+    return { ok: false, message: "No se pudo guardar." };
   }
-
-  const users = readUsers();
-  const userIndex = users.findIndex((u) => u.id === currentUserId);
-  if (userIndex === -1) {
-    return { ok: false as const, message: "Usuario no encontrado." };
-  }
-
-  if (users[userIndex].password !== currentPassword) {
-    return { ok: false as const, message: "La contrasena actual no coincide." };
-  }
-
-  users[userIndex].password = newPassword;
-  saveUsers(users);
-  return { ok: true as const };
 }
 
-export function updateCurrentUserContact(address: string, phone: string) {
-  if (!canUseStorage()) {
-    return { ok: false as const, message: "No se pudo guardar." };
+export async function updateCurrentUserAddressOnly(
+  address: string,
+): Promise<{ ok: true } | { ok: false; message: string }> {
+  if (!getAuthToken()?.trim()) {
+    return { ok: false, message: "No hay sesion activa." };
   }
-
-  const currentUserId = localStorage.getItem(CURRENT_USER_KEY);
-  if (!currentUserId) {
-    return { ok: false as const, message: "No hay sesion activa." };
+  try {
+    const { data } = await patchMyProfile({
+      address: address.trim(),
+    });
+    const pub = apiUserRecordToPublicUser(data as Record<string, unknown>);
+    const token = getAuthToken();
+    if (!token)
+      return { ok: false, message: "No hay sesion activa." };
+    persistSession(pub, token);
+    return { ok: true };
+  } catch (e) {
+    if (axios.isAxiosError(e) && e.response) {
+      return { ok: false, message: mapAuthApiError(e) };
+    }
+    return { ok: false, message: "No se pudo guardar la direccion." };
   }
-
-  const users = readUsers();
-  const userIndex = users.findIndex((u) => u.id === currentUserId);
-  if (userIndex === -1) {
-    return { ok: false as const, message: "Usuario no encontrado." };
-  }
-
-  users[userIndex].address = address.trim();
-  users[userIndex].phone = normalizePhoneDigits(phone);
-  saveUsers(users);
-  notifyAuthChanged();
-  return { ok: true as const };
-}
-
-/** Solo actualiza dirección de entrega (sin tocar teléfono). Útil desde mapa / wizard. */
-export function updateCurrentUserAddressOnly(address: string) {
-  if (!canUseStorage()) {
-    return { ok: false as const, message: "No se pudo guardar." };
-  }
-
-  const currentUserId = localStorage.getItem(CURRENT_USER_KEY);
-  if (!currentUserId) {
-    return { ok: false as const, message: "No hay sesion activa." };
-  }
-
-  const users = readUsers();
-  const userIndex = users.findIndex((u) => u.id === currentUserId);
-  if (userIndex === -1) {
-    return { ok: false as const, message: "Usuario no encontrado." };
-  }
-
-  users[userIndex].address = address.trim();
-  saveUsers(users);
-  notifyAuthChanged();
-  return { ok: true as const };
 }

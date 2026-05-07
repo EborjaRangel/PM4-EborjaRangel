@@ -2,21 +2,51 @@
 
 import { useEffect, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
-import { getAllUsers, getCurrentUser } from "@/lib/authStorage";
+import {
+  apiUserRecordToPublicUser,
+  BUILT_IN_ADMIN_EMAIL,
+  getCurrentUser,
+} from "@/lib/authStorage";
+import { fetchAllUsersAdmin } from "@/lib/authApi";
 import { PublicUser } from "@/interfaces/auth.interface";
 import PageShell from "@/components/layout/PageShell";
 import { PULSE } from "@/lib/pulse";
 
-function DashboardPage() {
+export default function DashboardPage() {
   const router = useRouter();
   const [mounted, setMounted] = useState(false);
   const [currentUser, setCurrentUser] = useState<PublicUser | null>(null);
   const [users, setUsers] = useState<PublicUser[]>([]);
 
   useEffect(() => {
-    setCurrentUser(getCurrentUser());
-    setUsers(getAllUsers());
+    let cancelled = false;
     setMounted(true);
+
+    async function bootstrap() {
+      const me = getCurrentUser();
+      if (cancelled) return;
+      setCurrentUser(me);
+      if (!me) return;
+
+      if (me.role === "admin") {
+        try {
+          const res = await fetchAllUsersAdmin();
+          if (cancelled) return;
+          const rows = Array.isArray(res.data) ? res.data : [];
+          setUsers(rows.map((r) => apiUserRecordToPublicUser(r as Record<string, unknown>)));
+        } catch {
+          if (!cancelled) setUsers([me]);
+        }
+      } else {
+        setUsers([me]);
+      }
+    }
+
+    void bootstrap();
+
+    return () => {
+      cancelled = true;
+    };
   }, []);
 
   useEffect(() => {
@@ -59,13 +89,16 @@ function DashboardPage() {
         <p className={`mt-2 text-sm ${PULSE.body}`}>
           {isAdmin ? (
             <>
-              Vista general de usuarios registrados y sesion actual. Los tres clientes
-              de demo (María, Carlos, Ana) usan la contrasena{" "}
-              <span className="font-mono text-[#1C1E21]">demo123</span>.
+              Lista de cuentas almacenadas en Postgres. Si arrancas la API por primera vez puede
+              crearse automaticamente una cuenta demo de administracion:{" "}
+              <span className="font-mono text-[#1C1E21]">
+                {BUILT_IN_ADMIN_EMAIL}
+              </span>
+              .
             </>
           ) : (
             <>
-              Solo ves tus propios datos de cuenta. El rol administrador puede ver el listado completo.
+              Solo ves tus propios datos de cuenta. Los administradores ven el listado completo desde el servidor.
             </>
           )}
         </p>
@@ -151,5 +184,3 @@ function DashboardPage() {
     </PageShell>
   );
 }
-
-export default DashboardPage;

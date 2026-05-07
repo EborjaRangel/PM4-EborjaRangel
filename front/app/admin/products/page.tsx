@@ -134,8 +134,9 @@ export default function AdminProductsPage() {
           className="mt-6 rounded-2xl border border-[#1877F2]/20 bg-[#E7F3FF]/50 px-4 py-3 text-sm text-[#1C1E21]"
           role="note"
         >
-          <strong className="font-semibold">Cuenta administrador (demo):</strong>{" "}
-          {BUILT_IN_ADMIN_EMAIL} / {BUILT_IN_ADMIN_PASSWORD}
+          <strong className="font-semibold">Cuenta administrador (PostgreSQL seed):</strong>{" "}
+          {BUILT_IN_ADMIN_EMAIL} / {BUILT_IN_ADMIN_PASSWORD} — se crea al iniciar la API si aun no
+          existe. Usala para iniciar sesion antes de llegar aqui.
         </div>
 
         <form onSubmit={handleSubmit} className="mt-8 max-w-xl space-y-4">

@@ -1,8 +1,16 @@
-import { Column, Entity, JoinColumn, OneToMany, OneToOne, PrimaryGeneratedColumn } from "typeorm";
+import {
+    Column,
+    CreateDateColumn,
+    Entity,
+    JoinColumn,
+    OneToMany,
+    OneToOne,
+    PrimaryGeneratedColumn,
+} from "typeorm";
 import { Credential } from "./Credential";
 import { Order } from "./Order";
 
-enum Role {
+export enum Role {
     ADMIN = "admin",
     USER = "user"
 }
@@ -35,6 +43,15 @@ export class User {
         default: Role.USER
     })
     role: Role;
+
+    @Column({ type: "int", default: 0 })
+    loginCount: number;
+
+    @Column({ type: "timestamptz", nullable: true })
+    lastLoginAt: Date | null;
+
+    @CreateDateColumn({ type: "timestamptz" })
+    createdAt: Date;
 
     @OneToOne(() => Credential)
     @JoinColumn()

@@ -1,7 +1,10 @@
 import axios from "axios";
 import { IProduct } from "@/interfaces/product.interface";
+import { resolveApiOrigin } from "@/lib/resolveApiOrigin";
 
-export const PRODUCTS_API_URL = "http://localhost:3000/products";
+function productsBase(): string {
+  return `${resolveApiOrigin()}/products`;
+}
 
 export const CATALOG_UPDATED_EVENT = "pulse-catalog-updated";
 
@@ -15,13 +18,13 @@ export function notifyCatalogUpdated() {
 
 /** Trae el catálogo desde el backend (`GET /products`). */
 export async function fetchProducts(): Promise<IProduct[]> {
-  const res = await axios.get<IProduct[]>(PRODUCTS_API_URL);
+  const res = await axios.get<IProduct[]>(productsBase());
   return Array.isArray(res.data) ? res.data : [];
 }
 
 /** Trae un producto por id (`GET /products/:id`). */
 export async function fetchProductById(id: number): Promise<IProduct> {
-  const res = await axios.get<IProduct>(`${PRODUCTS_API_URL}/${id}`);
+  const res = await axios.get<IProduct>(`${productsBase()}/${id}`);
   return res.data;
 }
 
@@ -73,7 +76,7 @@ export async function addAdminProduct(
   };
 
   try {
-    const res = await axios.post<IProduct>(PRODUCTS_API_URL, body);
+    const res = await axios.post<IProduct>(productsBase(), body);
     notifyCatalogUpdated();
     return { ok: true, product: res.data };
   } catch (err: unknown) {

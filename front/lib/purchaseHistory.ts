@@ -1,12 +1,10 @@
 import axios from "axios";
 import type { ICartItem, ICartTotals } from "@/lib/cartStorage";
+import { resolveApiOrigin } from "@/lib/resolveApiOrigin";
 
-const API_ORIGIN =
-  typeof process !== "undefined" && process.env.NEXT_PUBLIC_API_URL
-    ? process.env.NEXT_PUBLIC_API_URL.replace(/\/$/, "")
-    : "http://localhost:3000";
-
-export const PURCHASES_API_URL = `${API_ORIGIN}/purchases`;
+function purchasesBase(): string {
+  return `${resolveApiOrigin()}/purchases`;
+}
 
 export type PurchaseStatus = "completada_simulada";
 
@@ -123,10 +121,10 @@ function mapApiRecord(r: ApiPurchaseRecord): IPurchaseRecord | null {
 
 /** Historial desde Postgres (mas reciente primero en el servidor). */
 export async function fetchPurchasesByUserId(
-  userId: string
+  userId: string,
 ): Promise<IPurchaseRecord[]> {
   const res = await axios.get<ApiPurchaseRecord[]>(
-    `${PURCHASES_API_URL}/user/${encodeURIComponent(userId)}`
+    `${purchasesBase()}/user/${encodeURIComponent(userId)}`,
   );
   const list = Array.isArray(res.data) ? res.data : [];
   return list
@@ -163,7 +161,7 @@ export async function recordPurchase(
     };
   }
 
-  const res = await axios.post<ApiPurchaseRecord>(PURCHASES_API_URL, payload);
+  const res = await axios.post<ApiPurchaseRecord>(purchasesBase(), payload);
   const mapped = mapApiRecord(res.data);
   if (!mapped) {
     throw new Error("Respuesta invalida del servidor.");

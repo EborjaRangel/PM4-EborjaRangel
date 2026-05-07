@@ -21,7 +21,7 @@ export default function RegisterPage() {
   ) {
     setError("");
 
-    const result = registerUser(
+    const result = await registerUser(
       values.fullName,
       values.email,
       values.password,
@@ -34,7 +34,7 @@ export default function RegisterPage() {
       return;
     }
 
-    await hydrateLoggedInUserCart(result.user.id);
+    await hydrateLoggedInUserCart(result.user.id).catch(() => {});
 
     router.push("/profile");
     setSubmitting(false);

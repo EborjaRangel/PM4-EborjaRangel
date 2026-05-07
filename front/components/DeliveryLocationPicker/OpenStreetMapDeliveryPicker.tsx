@@ -193,7 +193,7 @@ export default function OpenStreetMapDeliveryPicker() {
       return;
     }
 
-    const result = updateCurrentUserAddressOnly(composed);
+    const result = await updateCurrentUserAddressOnly(composed);
     if (!result.ok) {
       setSaveErr(result.message);
       return;

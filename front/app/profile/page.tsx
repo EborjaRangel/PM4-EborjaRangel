@@ -46,7 +46,7 @@ export default function ProfilePage() {
     router.push("/login");
   }
 
-  function handlePasswordChange(event: FormEvent<HTMLFormElement>) {
+  async function handlePasswordChange(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
     setError("");
     setSuccess("");
@@ -66,7 +66,7 @@ export default function ProfilePage() {
       return;
     }
 
-    const result = updateCurrentUserPassword(currentPassword, newPassword);
+    const result = await updateCurrentUserPassword(currentPassword, newPassword);
     if (!result.ok) {
       setError(result.message);
       return;

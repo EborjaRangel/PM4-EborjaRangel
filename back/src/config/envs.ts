@@ -1,7 +1,13 @@
 import dotenv from "dotenv";
 dotenv.config();
 
+/** Conexión: usa `DATABASE_URL` si existe (Neon/Supabase/Railway/etc.); si no, host/usuario/password. */
+export const DATABASE_URL = (process.env.DATABASE_URL || "").trim();
 export const PORT: number = Number(process.env.PORT) || 3000;
+export const HOST: string =
+  typeof process.env.HOST === "string" && process.env.HOST.trim()
+    ? process.env.HOST.trim()
+    : "0.0.0.0";
 export const DB_NAME: string = process.env.DB_NAME || "proyecto_m4_front";
 export const DB_USER: string = process.env.DB_USER || "postgres";
 export const DB_PASSWORD: string = process.env.DB_PASSWORD || "admin";
