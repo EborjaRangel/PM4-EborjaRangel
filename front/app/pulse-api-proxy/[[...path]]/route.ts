@@ -21,7 +21,12 @@ function backendOrigin(): string | null {
     process.env.PULSE_BACKEND_URL?.trim() ||
     process.env.PULSE_PROXY_TARGET?.trim() ||
     "";
-  return v ? v.replace(/\/$/, "") : null;
+  if (v) return v.replace(/\/$/, "");
+  // `next dev`: sin .env.local el proxy no tenía URL y respondía 503. Default al API típico local.
+  if (process.env.NODE_ENV === "development") {
+    return "http://127.0.0.1:3000";
+  }
+  return null;
 }
 
 function buildTargetUrl(req: NextRequest, segments: string[]): string | null {
