@@ -1,0 +1,15 @@
+# Copia a `ngrok.yml` en la raíz del repo y ajusta si hace falta.
+# Documentación: NGROK.md
+#
+# Authtoken: mejor `ngrok config add-authtoken TOKEN` una vez (no lo subas a Git).
+# Si prefieres ponerlo aquí, descomenta la línea siguiente (y añade ngrok.yml a .gitignore si incluye secretos).
+# authtoken: TU_TOKEN
+
+version: "2"
+tunnels:
+  pulse-api:
+    proto: http
+    addr: 3000
+  pulse-web:
+    proto: http
+    addr: 3001
