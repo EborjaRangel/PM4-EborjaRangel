@@ -18,6 +18,12 @@ const proxyTargetRaw =
 const pulseProxyDestination = `${proxyTargetRaw.replace(/\/$/, "")}/:path*`;
 
 const nextConfig: NextConfig = {
+  /** Permite HMR y recursos dev cuando entras por IP LAN (celular en la misma WiFi). */
+  allowedDevOrigins: [
+    "192.168.1.248",
+    ...(process.env.ALLOWED_DEV_ORIGINS?.split(/[, ]+/).map((s) => s.trim()).filter(Boolean) ??
+      []),
+  ],
   async rewrites() {
     return [
       {
