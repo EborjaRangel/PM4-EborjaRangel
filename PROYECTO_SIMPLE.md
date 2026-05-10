@@ -17,6 +17,9 @@ Son **dos programas**:
 2. Abre **terminal B** → carpeta `front` → `npm run dev`  
    Entra en la URL que te muestre (ej. `http://localhost:3001`).
 
+El front reenvía `/pulse-api-proxy` al API por defecto en **`http://127.0.0.1:3000`** (como antes).  
+No necesitas variables extra en el front para eso.
+
 3. Postgres debe estar encendido en tu máquina.  
    Config en **`back/.env`** (copia de `back/.env.example`).  
    Para base **local**: **no pongas** `DATABASE_URL`; usa solo `DB_HOST`, `DB_USER`, etc.

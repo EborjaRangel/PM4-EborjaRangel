@@ -7,11 +7,25 @@ import { loadEnvConfig } from "@next/env";
 const frontRoot = path.dirname(fileURLToPath(import.meta.url));
 loadEnvConfig(frontRoot);
 
-/** El proxy `/pulse-api-proxy/*` lo gestiona `app/pulse-api-proxy/[[...path]]/route.ts`
- *  para leer `PULSE_BACKEND_URL` en tiempo de ejecucion (Vercel). Los rewrites aqui
- *  solo aplicarian en build y podian quedar apuntando a 127.0.0.1 si faltaba la env.
+/** Proxy del API: rewrite de `/pulse-api-proxy/*` → backend (comportamiento original).
+ *  Por defecto local: `http://127.0.0.1:3000`. En Vercel define `PULSE_BACKEND_URL`
+ *  o `PULSE_PROXY_TARGET` en Environment Variables y redeploy (se lee en el build).
  */
+const proxyTargetRaw =
+  process.env.PULSE_PROXY_TARGET ||
+  process.env.PULSE_BACKEND_URL ||
+  "http://127.0.0.1:3000";
+const pulseProxyDestination = `${proxyTargetRaw.replace(/\/$/, "")}/:path*`;
+
 const nextConfig: NextConfig = {
+  async rewrites() {
+    return [
+      {
+        source: "/pulse-api-proxy/:path*",
+        destination: pulseProxyDestination,
+      },
+    ];
+  },
   images: {
     remotePatterns: [
       {
