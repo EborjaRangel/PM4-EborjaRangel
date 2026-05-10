@@ -56,3 +56,9 @@ Copias la URL pública del API, ej. `https://algo.onrender.com`
 - **Vercel:** solo `PULSE_BACKEND_URL` en el panel del **front**.
 
 Yo (la IA) **no puedo** iniciar sesión en tu Vercel ni en Render por ti; solo tú puedes pegar esas variables en la web.
+
+---
+
+## ¿Firebase en lugar de Vercel?
+
+Sigue siendo **front en Firebase App Hosting** + **API aparte**. Pasos en **`FIREBASE.md`** y `front/apphosting.yaml`.

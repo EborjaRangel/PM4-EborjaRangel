@@ -1,0 +1,17 @@
+# Firebase App Hosting — Next.js (carpeta actual = raíz del app en Firebase)
+# Doc: https://firebase.google.com/docs/app-hosting/configure
+#
+# En la consola, al crear el backend, pon "Root directory" = front (esta carpeta).
+#
+# Obligatorio para tienda/login: define en la consola (recomendado) o aquí:
+#   PULSE_BACKEND_URL = https://tu-api-publica.com   (sin barra final; BUILD + RUNTIME)
+# La consola tiene prioridad sobre este archivo.
+#
+# Plan: Blaze. Puerto lo gestiona Firebase (no definas PORT).
+
+runConfig:
+  minInstances: 0
+  maxInstances: 10
+  concurrency: 80
+  cpu: 1
+  memoryMiB: 1024
