@@ -12,6 +12,15 @@ app.use(cors());
 app.use(express.json());
 app.use(morgan("dev"));
 
+/** Ayuda a comprobar en el navegador que este es el API (Render/Railway), no el front. */
+app.get("/", (_req: Request, res: Response) => {
+  res.json({
+    ok: true,
+    service: "pulse-api",
+    try: ["/health", "/products"],
+  });
+});
+
 app.get("/health", async (_req: Request, res: Response) => {
   try {
     if (!AppDataSource.isInitialized) {
