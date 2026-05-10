@@ -1,0 +1,28 @@
+# Blueprint opcional para Render (https://render.com).
+# Tras conectar el repo: New → Blueprint → selecciona este archivo, o crea un Web Service manual:
+#   Root Directory: back
+#   Build Command:  npm ci --include=dev && npm run build
+#   Start Command:  npm start
+#
+# Variables obligatorias en el servicio:
+#   DATABASE_URL  → Postgres en la nube (Neon, Supabase, Railway…)
+#   JWT_SECRET    → cadena larga y aleatoria (no uses el valor por defecto)
+#
+# Frontend en Vercel: define PULSE_BACKEND_URL = URL pública de este API (sin barra final).
+
+services:
+  - type: web
+    name: pm4-pulse-api
+    runtime: node
+    plan: free
+    rootDir: back
+    buildCommand: npm ci --include=dev && npm run build
+    startCommand: npm start
+    healthCheckPath: /health
+    envVars:
+      - key: NODE_VERSION
+        value: "20"
+      - key: DATABASE_URL
+        sync: false
+      - key: JWT_SECRET
+        sync: false
