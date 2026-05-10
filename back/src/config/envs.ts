@@ -1,5 +1,10 @@
+import path from "path";
 import dotenv from "dotenv";
-dotenv.config();
+
+/** Carpeta `back/` siempre, aunque `npm run dev` se ejecute con otro `cwd` (raíz del monorepo). */
+const backRoot = path.resolve(__dirname, "..", "..");
+dotenv.config({ path: path.join(backRoot, ".env") });
+dotenv.config({ path: path.join(backRoot, ".env.local"), override: true });
 
 /** Conexión: usa `DATABASE_URL` si existe (Neon/Supabase/Railway/etc.); si no, host/usuario/password. */
 export const DATABASE_URL = (process.env.DATABASE_URL || "").trim();
