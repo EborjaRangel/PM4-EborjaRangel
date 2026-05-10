@@ -18,12 +18,29 @@ Este repo ya lo soporta con **`NEXT_PUBLIC_API_URL`** (ver `front/lib/resolveApi
    ```
    En macOS/Linux: `cp ngrok.yml.example ngrok.yml`
 
-2. (Opcional) Si tu token **no** está en la config global de ngrok, edita `ngrok.yml` y descomenta / pon `authtoken:` según la [documentación de ngrok](https://ngrok.com/docs/agent/config/).
+2. Tu **`authtoken`** lo guardó ngrok en el equipo (ej.  
+   `C:\Users\Administrador\AppData\Local\ngrok\ngrok.yml`).  
+   El archivo **`ngrok.yml` del repo solo define los túneles** y **no** incluye el token.  
+   Por eso hay que cargar **los dos** ficheros (primero el global, luego el del repo).
 
 3. Desde la **raíz del repo** (donde está `ngrok.yml`):
 
+   **PowerShell (Windows):**
+
+   ```powershell
+   ngrok start --config "$env:LOCALAPPDATA\ngrok\ngrok.yml" --config ngrok.yml pulse-api pulse-web
+   ```
+
+   **CMD (Windows):**
+
+   ```bat
+   ngrok start --config "%LOCALAPPDATA%\ngrok\ngrok.yml" --config ngrok.yml pulse-api pulse-web
+   ```
+
+   **macOS / Linux** (ajusta la ruta si tu config global está en otro sitio; suele ser `~/.config/ngrok/ngrok.yml`):
+
    ```bash
-   ngrok start --config ngrok.yml pulse-api pulse-web
+   ngrok start --config ~/.config/ngrok/ngrok.yml --config ngrok.yml pulse-api pulse-web
    ```
 
    Si tu CLI solo acepta un túnel a la vez, usa la **opción B** de abajo.
@@ -40,6 +57,12 @@ Este repo ya lo soporta con **`NEXT_PUBLIC_API_URL`** (ver `front/lib/resolveApi
 6. **Reinicia** `npm run dev` del front para cargar `.env.local`.
 
 7. Abre en el navegador la URL https del túnel del **front** (puerto 3001).
+
+## Si sale `ERR_NGROK_4018` (authentication failed)
+
+Suele pasar si ejecutaste solo `ngrok start --config ngrok.yml ...` **sin** el fichero global donde está el token. Usa el comando de **dos `--config`** de la opción A (arriba).
+
+También revisa: cuenta de ngrok **verificada** por correo y token copiado bien con `ngrok config add-authtoken ...`.
 
 ## Opción B — Dos terminales ngrok
 

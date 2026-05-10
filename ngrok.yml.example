@@ -1,9 +1,11 @@
-# Copia a `ngrok.yml` en la raíz del repo y ajusta si hace falta.
-# Documentación: NGROK.md
+# NO pongas solo authtoken aquí si ya usaste `ngrok config add-authtoken`:
+# al arrancar hay que combinar este archivo con el ngrok.yml global (ver NGROK.md).
 #
-# Authtoken: mejor `ngrok config add-authtoken TOKEN` una vez (no lo subas a Git).
-# Si prefieres ponerlo aquí, descomenta la línea siguiente (y añade ngrok.yml a .gitignore si incluye secretos).
-# authtoken: TU_TOKEN
+# Copia a `ngrok.yml` en la raíz del repo:
+#   copy ngrok.yml.example ngrok.yml   (Windows)
+#
+# Comando típico (PowerShell), desde la raíz del repo:
+#   ngrok start --config "$env:LOCALAPPDATA\ngrok\ngrok.yml" --config ngrok.yml pulse-api pulse-web
 
 version: "2"
 tunnels:
