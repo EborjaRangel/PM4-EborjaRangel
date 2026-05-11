@@ -1,6 +1,7 @@
 import Link from "next/link";
 import PageShell from "@/components/layout/PageShell";
 import DeliveryLocationPicker from "@/components/DeliveryLocationPicker/DeliveryLocationPicker";
+import AddressBook from "@/components/AddressBook/AddressBook";
 import { PULSE } from "@/lib/pulse";
 
 /** La clave no debe quedar vacía tras `npm run build` sin CI. */
@@ -32,8 +33,24 @@ export default function CartUbicacionPage() {
         </p>
       </section>
 
+      <section className={`mb-6 ${PULSE.card} p-6 sm:p-8`}>
+        <AddressBook
+          hideWhenEmpty
+          title="Direcciones que ya tienes guardadas"
+          subtitle="Puedes elegir cuál usar al pagar marcándola como predeterminada, editarla o eliminarla."
+        />
+      </section>
+
       <section className={`${PULSE.card} p-6 sm:p-8`}>
-        <DeliveryLocationPicker mapsApiKey={mapsApiKey} />
+        <p className={PULSE.kicker}>NUEVA DIRECCIÓN</p>
+        <h2 className={`mt-2 ${PULSE.h2}`}>Agregar otra dirección</h2>
+        <p className={`mt-2 text-sm ${PULSE.body}`}>
+          Busca por código postal, escribe en el buscador, o mueve el pin en el
+          mapa para añadir una dirección nueva a tu libreta.
+        </p>
+        <div className="mt-6">
+          <DeliveryLocationPicker mapsApiKey={mapsApiKey} />
+        </div>
       </section>
     </PageShell>
   );

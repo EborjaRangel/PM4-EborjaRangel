@@ -498,25 +498,7 @@ export default function DeliveryLocationPicker({
     "";
 
   if (!apiKey) {
-    return (
-      <div className="space-y-6">
-        <div
-          className={`rounded-2xl border border-[#1877F2]/20 bg-[#E7F3FF]/70 px-5 py-4 text-sm text-[#1C1E21]`}
-        >
-          <p className="font-semibold text-[#1877F2]">Modo gratuito (sin Google)</p>
-          <p className={`mt-2 ${PULSE.body}`}>
-            No necesitas cuenta ni tarjeta en Google: este mapa usa{" "}
-            <strong>OpenStreetMap</strong> y geocodificación pública (Nominatim).
-            Si más adelante agregas una API key en{" "}
-            <code className="rounded bg-white/90 px-1 font-mono text-xs">
-              .env.local
-            </code>
-            , aquí se usará automáticamente el mapa de Google.
-          </p>
-        </div>
-        <OpenStreetMapDeliveryPicker />
-      </div>
-    );
+    return <OpenStreetMapDeliveryPicker />;
   }
 
   return <DeliveryMapInner apiKey={apiKey} />;

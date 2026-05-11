@@ -134,6 +134,24 @@ export async function fetchPurchasesByUserId(
     .filter((x): x is IPurchaseRecord => x !== null);
 }
 
+/** Compra puntual por id, sin sesión (la usa la página pública /envio/[id]). */
+export async function fetchPurchaseById(
+  id: string,
+): Promise<IPurchaseRecord | null> {
+  const safeId = (id ?? "").toString().trim();
+  if (!safeId) return null;
+  try {
+    const res = await axios.get<ApiPurchaseRecord>(
+      `${purchasesBase()}/${encodeURIComponent(safeId)}`,
+      { headers: mergeApiHeaders() },
+    );
+    return mapApiRecord(res.data);
+  } catch (err) {
+    if (axios.isAxiosError(err) && err.response?.status === 404) return null;
+    throw err;
+  }
+}
+
 /**
  * Registra la compra en el servidor (sin datos de tarjeta).
  */

@@ -7,6 +7,8 @@ import Card from "./card";
 import { IProduct } from "@/interfaces/product.interface";
 import { PULSE } from "@/lib/pulse";
 import { CATALOG_UPDATED_EVENT, fetchProducts } from "@/lib/productCatalog";
+import { fetchProductCategories } from "@/lib/productCategoriesApi";
+import { categoryLabel as fallbackCategoryLabel } from "@/data/productCategories";
 
 function CatalogImage({ src, alt }: { src: string; alt: string }) {
   const allowedHost =
@@ -45,6 +47,9 @@ function normalizeText(value: string): string {
 
 function CardContainer() {
   const [products, setProducts] = useState<IProduct[]>([]);
+  const [categoryNameById, setCategoryNameById] = useState<
+    Record<number, string>
+  >({});
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [query, setQuery] = useState("");
@@ -63,17 +68,32 @@ function CardContainer() {
     }
   }, []);
 
+  const loadCategories = useCallback(async () => {
+    try {
+      const list = await fetchProductCategories();
+      const map: Record<number, string> = {};
+      for (const c of list) {
+        if (c?.id != null && c?.name) map[c.id] = c.name;
+      }
+      setCategoryNameById(map);
+    } catch {
+      setCategoryNameById({});
+    }
+  }, []);
+
   useEffect(() => {
     load();
-  }, [load]);
+    void loadCategories();
+  }, [load, loadCategories]);
 
   useEffect(() => {
     const sync = () => {
       load();
+      void loadCategories();
     };
     window.addEventListener(CATALOG_UPDATED_EVENT, sync);
     return () => window.removeEventListener(CATALOG_UPDATED_EVENT, sync);
-  }, [load]);
+  }, [load, loadCategories]);
 
   const filteredProducts = useMemo(() => {
     const q = normalizeText(query.trim());
@@ -81,9 +101,16 @@ function CardContainer() {
     return products.filter((p) => {
       const name = normalizeText(p.name ?? "");
       const description = normalizeText(p.description ?? "");
-      return name.includes(q) || description.includes(q);
+      const apiCategoryName = categoryNameById[p.categoryId ?? -1] ?? "";
+      const fallbackName = fallbackCategoryLabel(p.categoryId ?? -1);
+      const category = normalizeText(`${apiCategoryName} ${fallbackName}`);
+      return (
+        name.includes(q) ||
+        description.includes(q) ||
+        category.includes(q)
+      );
     });
-  }, [products, query]);
+  }, [products, query, categoryNameById]);
 
   if (loading && products.length === 0) {
     return (
@@ -132,14 +159,18 @@ function CardContainer() {
                   Explora el catálogo
                 </p>
                 <p className="catalog-search-headline mt-1 text-xl font-extrabold leading-tight tracking-tight sm:text-2xl">
-                  Buscar por nombre o descripción…
+                  Buscar por nombre, descripción o categoría…
                 </p>
                 <p className="mt-1.5 max-w-xl text-xs font-medium text-[#65676B] sm:text-sm">
                   Escribe palabras clave y filtra al instante — coincide con el{" "}
-                  <span className="font-semibold text-[#1877F2]">nombre</span>{" "}
-                  y la{" "}
+                  <span className="font-semibold text-[#1877F2]">nombre</span>,
+                  la{" "}
                   <span className="font-semibold text-[#7c3aed]">
                     descripción
+                  </span>{" "}
+                  o la{" "}
+                  <span className="font-semibold text-[#10b981]">
+                    categoría
                   </span>{" "}
                   de cada producto.
                 </p>
@@ -152,9 +183,9 @@ function CardContainer() {
                 type="search"
                 value={query}
                 onChange={(e) => setQuery(e.target.value)}
-                placeholder="Ej. auricular · deportes · oferta…"
+                placeholder="Ej. auricular · smartphones · oferta…"
                 className={`${PULSE.input} border-[#1877F2]/25 pr-10 shadow-[inset_0_1px_3px_rgba(24,119,242,0.07)] ring-2 ring-transparent transition focus:border-[#1877F2]/45 focus:ring-[#1877F2]/20`}
-                aria-label="Buscar productos por nombre o descripción"
+                aria-label="Buscar productos por nombre, descripción o categoría"
               />
               {query ? (
                 <button

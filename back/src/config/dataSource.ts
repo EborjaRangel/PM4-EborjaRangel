@@ -14,6 +14,7 @@ import { Category } from "../entities/Category";
 import { Product } from "../entities/Product";
 import { PurchaseRecord } from "../entities/PurchaseRecord";
 import { SavedCart } from "../entities/SavedCart";
+import { Address } from "../entities/Address";
 
 const entities = [
   User,
@@ -23,6 +24,7 @@ const entities = [
   Category,
   PurchaseRecord,
   SavedCart,
+  Address,
 ];
 
 /**

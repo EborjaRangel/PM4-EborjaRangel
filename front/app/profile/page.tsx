@@ -11,6 +11,7 @@ import {
 } from "@/lib/authStorage";
 import { PublicUser } from "@/interfaces/auth.interface";
 import ProfileContactForm from "@/components/ProfileContactForm/ProfileContactForm";
+import AddressBook from "@/components/AddressBook/AddressBook";
 import PageShell from "@/components/layout/PageShell";
 import { PULSE } from "@/lib/pulse";
 
@@ -142,6 +143,10 @@ export default function ProfilePage() {
               initialAddress={user.address ?? ""}
               initialPhone={user.phone ?? ""}
             />
+          </div>
+
+          <div className="mt-8 border-t border-[#1877F2]/12 pt-8">
+            <AddressBook />
           </div>
 
           <button

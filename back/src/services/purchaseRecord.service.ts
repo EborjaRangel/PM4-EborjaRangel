@@ -123,3 +123,17 @@ export const getPurchasesByClientUserIdService = async (
     order: { createdAt: "DESC" },
   });
 };
+
+export const getPurchaseByIdService = async (
+  id: string
+): Promise<PurchaseRecord> => {
+  const purchaseId = (id ?? "").toString().trim();
+  if (!purchaseId) {
+    throw new ClientError("id de compra es obligatorio.", 400);
+  }
+  const record = await PurchaseRecordRepository.findOneBy({ id: purchaseId });
+  if (!record) {
+    throw new ClientError("Compra no encontrada.", 404);
+  }
+  return record;
+};

@@ -13,6 +13,7 @@ import {
 } from "@/lib/purchaseHistory";
 import { categoryLabel } from "@/data/productCategories";
 import PurchaseShippingMapFromAddress from "@/components/PurchaseShippingMap/PurchaseShippingMapFromAddress";
+import PurchaseQrCode from "@/components/PurchaseQrCode/PurchaseQrCode";
 
 function formatOrderMoney(value: number): string {
   if (!Number.isFinite(value)) return "—";
@@ -161,44 +162,49 @@ export default function MisComprasPage() {
                   </div>
                 </div>
 
-                <div className="mt-5 rounded-xl border border-[#1877F2]/12 bg-[#F9FAFB] p-4 sm:p-5">
-                  <p className="text-xs font-semibold uppercase tracking-wide text-[#65676B]">
-                    Direccion de envio
-                  </p>
-                  {order.shipping ? (
-                    <>
-                      {order.shipping.address ? (
-                        <p
-                          className={`mt-2 whitespace-pre-wrap text-sm text-[#1C1E21] ${PULSE.body}`}
-                        >
-                          {order.shipping.address}
-                        </p>
-                      ) : null}
-                      {order.shipping.phone ? (
-                        <p className={`mt-2 text-sm text-[#65676B] ${PULSE.body}`}>
-                          Telefono:{" "}
-                          <span className="font-medium text-[#1C1E21]">
-                            {order.shipping.phone}
-                          </span>
-                        </p>
-                      ) : null}
-                      {!order.shipping.address && !order.shipping.phone ? (
-                        <p className={`mt-2 text-sm text-[#65676B] ${PULSE.body}`}>
-                          No había dirección en tu perfil al momento del pedido.
-                        </p>
-                      ) : null}
-                      <PurchaseShippingMapFromAddress
-                        address={order.shipping.address}
-                        savedLat={order.shipping.lat}
-                        savedLng={order.shipping.lng}
-                      />
-                    </>
-                  ) : (
-                    <p className={`mt-2 text-sm text-[#65676B] ${PULSE.body}`}>
-                      Este pedido no incluye datos de envío guardados (compras
-                      anteriores al cambio).
+                <div className="mt-5 grid gap-4 sm:grid-cols-[1fr_auto]">
+                  <div className="rounded-xl border border-[#1877F2]/12 bg-[#F9FAFB] p-4 sm:p-5">
+                    <p className="text-xs font-semibold uppercase tracking-wide text-[#65676B]">
+                      Direccion de envio
                     </p>
-                  )}
+                    {order.shipping ? (
+                      <>
+                        {order.shipping.address ? (
+                          <p
+                            className={`mt-2 whitespace-pre-wrap text-sm text-[#1C1E21] ${PULSE.body}`}
+                          >
+                            {order.shipping.address}
+                          </p>
+                        ) : null}
+                        {order.shipping.phone ? (
+                          <p className={`mt-2 text-sm text-[#65676B] ${PULSE.body}`}>
+                            Telefono:{" "}
+                            <span className="font-medium text-[#1C1E21]">
+                              {order.shipping.phone}
+                            </span>
+                          </p>
+                        ) : null}
+                        {!order.shipping.address && !order.shipping.phone ? (
+                          <p className={`mt-2 text-sm text-[#65676B] ${PULSE.body}`}>
+                            No había dirección en tu perfil al momento del pedido.
+                          </p>
+                        ) : null}
+                        <PurchaseShippingMapFromAddress
+                          address={order.shipping.address}
+                          savedLat={order.shipping.lat}
+                          savedLng={order.shipping.lng}
+                        />
+                      </>
+                    ) : (
+                      <p className={`mt-2 text-sm text-[#65676B] ${PULSE.body}`}>
+                        Este pedido no incluye datos de envío guardados (compras
+                        anteriores al cambio).
+                      </p>
+                    )}
+                  </div>
+                  <div className="flex justify-center sm:justify-end">
+                    <PurchaseQrCode order={order} />
+                  </div>
                 </div>
 
                 <ul className="mt-4 divide-y divide-[#DADDE1]">

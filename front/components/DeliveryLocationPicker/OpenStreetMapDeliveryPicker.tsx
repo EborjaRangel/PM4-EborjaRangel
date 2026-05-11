@@ -24,6 +24,7 @@ import {
 } from "@/lib/deliveryLocationCompose";
 import { deliveryAddressYup } from "@/lib/deliveryContact.validation";
 import { PULSE } from "@/lib/pulse";
+import { createMyAddress } from "@/lib/addressApi";
 
 function MapClickHandler({
   onPick,
@@ -71,6 +72,62 @@ export default function OpenStreetMapDeliveryPicker() {
   const [marker, setMarker] = useState(DEFAULT_MAP_CENTER);
   const [mapZoom, setMapZoom] = useState(13);
 
+  /**
+   * Si el navegador / dispositivo tiene activada la geolocalización, intenta
+   * centrar el mapa en la posición actual al entrar. Si el permiso está
+   * "denied", o el usuario lo rechaza, o falla por timeout / sin sensor, se
+   * deja silenciosamente el centro por defecto. Nunca insistimos.
+   */
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    if (!("geolocation" in navigator)) return;
+
+    let cancelled = false;
+
+    const requestPosition = () => {
+      navigator.geolocation.getCurrentPosition(
+        (pos) => {
+          if (cancelled) return;
+          const { latitude, longitude } = pos.coords;
+          setMarker({ lat: latitude, lng: longitude });
+          setMapZoom(16);
+          void reverseGeocode(latitude, longitude);
+        },
+        () => {
+          // Permiso rechazado / timeout / sin GPS: no hacemos nada.
+        },
+        { enableHighAccuracy: false, timeout: 8000, maximumAge: 60_000 },
+      );
+    };
+
+    const permissionsApi = (navigator as Navigator & {
+      permissions?: {
+        query: (q: { name: PermissionName }) => Promise<PermissionStatus>;
+      };
+    }).permissions;
+
+    if (permissionsApi?.query) {
+      permissionsApi
+        .query({ name: "geolocation" as PermissionName })
+        .then((status) => {
+          if (cancelled) return;
+          if (status.state === "denied") return; // no prompt, no fetch
+          requestPosition();
+        })
+        .catch(() => {
+          // Si Permissions API falla, probamos sin más.
+          requestPosition();
+        });
+    } else {
+      requestPosition();
+    }
+
+    return () => {
+      cancelled = true;
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
   const [street, setStreet] = useState("");
   const [exterior, setExterior] = useState("");
   const [colony, setColony] = useState("");
@@ -79,11 +136,24 @@ export default function OpenStreetMapDeliveryPicker() {
   const [betweenA, setBetweenA] = useState("");
   const [betweenB, setBetweenB] = useState("");
 
+  const [label, setLabel] = useState("Casa");
+  const [phoneAddress, setPhoneAddress] = useState("");
+  const [setAsDefault, setSetAsDefault] = useState(false);
+
   const [cpQuery, setCpQuery] = useState("");
   const [addressQuery, setAddressQuery] = useState("");
   const [geoBusy, setGeoBusy] = useState(false);
   const [saveErr, setSaveErr] = useState("");
   const [saveOk, setSaveOk] = useState(false);
+
+  // Pre-rellena el teléfono con el del perfil al montar.
+  useEffect(() => {
+    const u = getCurrentUser();
+    if (u && !phoneAddress) {
+      setPhoneAddress(u.phone ?? "");
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   const applyParts = useCallback((parts: DeliveryAddressParts) => {
     setStreet(parts.street);
@@ -193,11 +263,29 @@ export default function OpenStreetMapDeliveryPicker() {
       return;
     }
 
-    const result = await updateCurrentUserAddressOnly(composed);
-    if (!result.ok) {
-      setSaveErr(result.message);
+    const phoneClean = phoneAddress.trim();
+    if (phoneClean.length < 6) {
+      setSaveErr("Indica un teléfono de contacto (mínimo 6 dígitos).");
       return;
     }
+
+    // Guarda como nueva dirección del usuario en el backend.
+    const created = await createMyAddress({
+      label: label.trim() || "Sin etiqueta",
+      address: composed,
+      phone: phoneClean,
+      lat: marker.lat,
+      lng: marker.lng,
+      isDefault: setAsDefault,
+    });
+    if (!created.ok) {
+      setSaveErr(created.message);
+      return;
+    }
+
+    // Mantén también el "user.address/phone" como fallback (compatibilidad
+    // con compras existentes que toman la dirección del perfil).
+    await updateCurrentUserAddressOnly(composed);
 
     setSaveOk(true);
   }
@@ -237,7 +325,7 @@ export default function OpenStreetMapDeliveryPicker() {
 
         <div className={PULSE.surfaceMuted}>
           <p className="text-xs font-semibold text-[#65676B]">
-            Buscar dirección o lugar (OpenStreetMap / Nominatim)
+            Buscar dirección o lugar en el Mapa
           </p>
           <div className="mt-3 flex flex-wrap gap-2">
             <input
@@ -349,6 +437,46 @@ export default function OpenStreetMapDeliveryPicker() {
             </div>
           </div>
 
+          <div className="border-t border-[#1877F2]/10 pt-4">
+            <p className="mb-2 text-xs font-semibold uppercase tracking-wide text-[#1877F2]">
+              Datos de esta dirección
+            </p>
+            <div className="grid gap-4 sm:grid-cols-2">
+              <label className="block">
+                <span className="mb-1 block text-xs text-[#65676B]">
+                  Etiqueta (alias)
+                </span>
+                <input
+                  className={PULSE.input}
+                  value={label}
+                  onChange={(e) => setLabel(e.target.value)}
+                  placeholder="Casa, Oficina, Mamá…"
+                />
+              </label>
+              <label className="block">
+                <span className="mb-1 block text-xs text-[#65676B]">
+                  Teléfono de contacto
+                </span>
+                <input
+                  className={PULSE.input}
+                  value={phoneAddress}
+                  onChange={(e) => setPhoneAddress(e.target.value)}
+                  placeholder="Ej. 55 1234 5678"
+                  inputMode="tel"
+                />
+              </label>
+            </div>
+            <label className="mt-3 inline-flex cursor-pointer items-center gap-2 text-sm text-[#1C1E21]">
+              <input
+                type="checkbox"
+                checked={setAsDefault}
+                onChange={(e) => setSetAsDefault(e.target.checked)}
+                className="h-4 w-4 cursor-pointer accent-[#1877F2]"
+              />
+              <span>Marcar como dirección predeterminada</span>
+            </label>
+          </div>
+
           {geoBusy ? (
             <p className="text-xs text-[#65676B]">Consultando ubicacion...</p>
           ) : null}
@@ -360,7 +488,11 @@ export default function OpenStreetMapDeliveryPicker() {
           ) : null}
           {saveOk ? (
             <p className="rounded-xl border border-emerald-200 bg-emerald-50 px-3 py-2 text-sm text-emerald-700">
-              Direccion guardada en tu cuenta.{" "}
+              Dirección agregada a tu lista.{" "}
+              <Link href="/profile" className={PULSE.link}>
+                Ver mis direcciones
+              </Link>
+              {" · "}
               <Link href="/cart" className={PULSE.link}>
                 Volver al carrito
               </Link>
@@ -373,7 +505,7 @@ export default function OpenStreetMapDeliveryPicker() {
             disabled={!loggedIn}
             className={`${PULSE.btnPrimaryBlock} cursor-pointer disabled:cursor-not-allowed disabled:opacity-60`}
           >
-            {loggedIn ? "Guardar dirección de entrega" : "Inicia sesión para guardar"}
+            {loggedIn ? "Agregar dirección de envío" : "Inicia sesión para guardar"}
           </button>
           {!loggedIn ? (
             <Link href="/login" className={`inline-block text-sm ${PULSE.link}`}>
@@ -385,8 +517,7 @@ export default function OpenStreetMapDeliveryPicker() {
 
       <div className="flex flex-col gap-3">
         <p className={`text-xs ${PULSE.body}`}>
-          Mapa gratuito OpenStreetMap. Toca el mapa o arrastra el pin; la
-          la dirección se completa con Nominatim (uso educativo, sin tarjeta).
+          Mapa: toca o arrastra el PIN para seleccionar lugar de Envío.
         </p>
         <div className="relative z-0 min-h-[420px] w-full overflow-hidden rounded-2xl border border-[#1877F2]/15 shadow-[0_8px_32px_rgba(24,119,242,0.12)]">
           <MapContainer

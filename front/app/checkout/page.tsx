@@ -21,6 +21,8 @@ import {
   type IPurchaseShippingSnapshot,
 } from "@/lib/purchaseHistory";
 import { resolveMexicoShippingCoords } from "@/lib/geocodeShipping";
+import { listMyAddresses } from "@/lib/addressApi";
+import type { IAddress } from "@/interfaces/address.interface";
 
 type CardBrand = "visa" | "mastercard" | "amex" | "unknown";
 
@@ -79,6 +81,98 @@ async function buildShippingSnapshot(
   return snap;
 }
 
+/** Genera el snapshot a partir de una dirección de la libreta del usuario. */
+async function buildShippingSnapshotFromAddress(
+  picked: IAddress,
+): Promise<IPurchaseShippingSnapshot | null> {
+  const address = (picked.address ?? "").trim();
+  const phone = (picked.phone ?? "").trim();
+  if (!address && !phone) return null;
+
+  let lat = picked.lat ?? undefined;
+  let lng = picked.lng ?? undefined;
+  if ((lat === undefined || lng === undefined) && address.length >= 5) {
+    const r = await resolveMexicoShippingCoords(address);
+    if (r) {
+      lat = r.lat;
+      lng = r.lng;
+    }
+  }
+
+  const snap: IPurchaseShippingSnapshot = { address, phone };
+  if (lat !== undefined && lng !== undefined) {
+    return { ...snap, lat, lng };
+  }
+  return snap;
+}
+
+function BrandLogo({ brand }: { brand: "visa" | "mastercard" | "amex" }) {
+  if (brand === "visa") {
+    return (
+      <svg
+        viewBox="0 0 60 20"
+        className="h-4 w-8 shrink-0"
+        aria-hidden="true"
+        focusable="false"
+      >
+        <rect width="60" height="20" rx="3" fill="#1A1F71" />
+        <text
+          x="30"
+          y="14.5"
+          textAnchor="middle"
+          fill="#FFFFFF"
+          fontFamily="Arial Black, Arial, sans-serif"
+          fontWeight={900}
+          fontSize={12}
+          letterSpacing="1"
+        >
+          VISA
+        </text>
+      </svg>
+    );
+  }
+  if (brand === "mastercard") {
+    return (
+      <svg
+        viewBox="0 0 40 24"
+        className="h-5 w-7 shrink-0"
+        aria-hidden="true"
+        focusable="false"
+      >
+        <circle cx="15" cy="12" r="9" fill="#EB001B" />
+        <circle cx="25" cy="12" r="9" fill="#F79E1B" fillOpacity="0.92" />
+        <path
+          d="M20 5.4a9 9 0 0 1 0 13.2 9 9 0 0 1 0-13.2Z"
+          fill="#FF5F00"
+        />
+      </svg>
+    );
+  }
+  // amex
+  return (
+    <svg
+      viewBox="0 0 60 20"
+      className="h-4 w-8 shrink-0"
+      aria-hidden="true"
+      focusable="false"
+    >
+      <rect width="60" height="20" rx="3" fill="#006FCF" />
+      <text
+        x="30"
+        y="14"
+        textAnchor="middle"
+        fill="#FFFFFF"
+        fontFamily="Arial Black, Arial, sans-serif"
+        fontWeight={900}
+        fontSize={9}
+        letterSpacing="0.5"
+      >
+        AMEX
+      </text>
+    </svg>
+  );
+}
+
 function formatPan(value: string, brand: CardBrand) {
   const d = digitsOnly(value).slice(0, brand === "amex" ? 15 : 16);
   if (brand === "amex") {
@@ -102,22 +196,52 @@ export default function CheckoutPage() {
   });
   const [hydrated, setHydrated] = useState(false);
 
+  const [addresses, setAddresses] = useState<IAddress[]>([]);
+  const [selectedAddressId, setSelectedAddressId] = useState<number | null>(
+    null,
+  );
+  const [addressesLoading, setAddressesLoading] = useState(false);
+
   const sync = useCallback(() => {
     const list = getCart();
     setItems(list);
     setTotals(getCartTotals(list));
   }, []);
 
+  const loadAddresses = useCallback(async () => {
+    if (!getCurrentUser()) {
+      setAddresses([]);
+      setSelectedAddressId(null);
+      return;
+    }
+    setAddressesLoading(true);
+    try {
+      const list = await listMyAddresses();
+      setAddresses(list);
+      // Selecciona la default; si no hay, la primera.
+      const def = list.find((a) => a.isDefault) ?? list[0] ?? null;
+      setSelectedAddressId(def?.id ?? null);
+    } catch {
+      setAddresses([]);
+      setSelectedAddressId(null);
+    } finally {
+      setAddressesLoading(false);
+    }
+  }, []);
+
   useEffect(() => {
     sync();
     setHydrated(true);
+    void loadAddresses();
     window.addEventListener(CART_UPDATED_EVENT, sync);
-    window.addEventListener(AUTH_CHANGED_EVENT, sync);
+    window.addEventListener(AUTH_CHANGED_EVENT, () => {
+      sync();
+      void loadAddresses();
+    });
     return () => {
       window.removeEventListener(CART_UPDATED_EVENT, sync);
-      window.removeEventListener(AUTH_CHANGED_EVENT, sync);
     };
-  }, [sync]);
+  }, [sync, loadAddresses]);
 
   const { subtotal, shipping, taxes, total } = totals;
 
@@ -206,7 +330,10 @@ export default function CheckoutPage() {
     if (user) {
       setSubmitting(true);
       try {
-        const shipping = await buildShippingSnapshot(user);
+        const picked = addresses.find((a) => a.id === selectedAddressId) ?? null;
+        const shipping = picked
+          ? await buildShippingSnapshotFromAddress(picked)
+          : await buildShippingSnapshot(user);
         await recordPurchase(
           user.id,
           user.email,
@@ -266,6 +393,99 @@ export default function CheckoutPage() {
         ) : null}
       </section>
 
+      {hydrated && getCurrentUser() ? (
+        <section className={`mb-6 ${PULSE.card} p-6 sm:p-8`}>
+          <div className="flex flex-wrap items-start justify-between gap-3">
+            <div>
+              <p className={PULSE.kicker}>ENVÍO</p>
+              <h2 className={`mt-2 ${PULSE.h2}`}>¿A dónde te lo enviamos?</h2>
+              <p className={`mt-2 text-sm ${PULSE.body}`}>
+                Elige una de tus direcciones guardadas o agrega una nueva.
+              </p>
+            </div>
+            <Link
+              href="/cart/ubicacion"
+              className={`${PULSE.btnSecondary} hidden sm:inline-flex`}
+            >
+              + Nueva dirección
+            </Link>
+          </div>
+
+          {addressesLoading ? (
+            <p className="mt-4 text-sm text-[#65676B]">
+              Cargando tus direcciones…
+            </p>
+          ) : addresses.length === 0 ? (
+            <div className="mt-4 rounded-2xl border border-dashed border-[#1877F2]/30 bg-[#E7F3FF]/30 p-5 text-center">
+              <p className={`text-sm ${PULSE.body}`}>
+                No tienes direcciones guardadas. Agrega una para continuar.
+              </p>
+              <Link
+                href="/cart/ubicacion"
+                className={`${PULSE.btnPrimary} mt-3 inline-flex`}
+              >
+                Agregar dirección
+              </Link>
+            </div>
+          ) : (
+            <ul className="mt-4 grid gap-3 sm:grid-cols-2">
+              {addresses.map((a) => {
+                const checked = selectedAddressId === a.id;
+                return (
+                  <li key={a.id}>
+                    <label
+                      className={`flex h-full cursor-pointer flex-col gap-1 rounded-2xl border p-4 transition ${
+                        checked
+                          ? "border-[#1877F2] bg-[#E7F3FF]/50 shadow-[0_4px_18px_rgba(24,119,242,0.18)]"
+                          : "border-[#DADDE1] bg-white hover:border-[#1877F2]/40"
+                      }`}
+                    >
+                      <span className="flex items-center justify-between gap-2">
+                        <span className="flex items-center gap-2">
+                          <input
+                            type="radio"
+                            name="checkout-address"
+                            className="h-4 w-4 cursor-pointer accent-[#1877F2]"
+                            checked={checked}
+                            onChange={() => setSelectedAddressId(a.id)}
+                          />
+                          <span className="font-semibold text-[#1C1E21]">
+                            {a.label || "Sin etiqueta"}
+                          </span>
+                        </span>
+                        {a.isDefault ? (
+                          <span className="rounded-full bg-[#1877F2] px-2 py-0.5 text-[10px] font-bold uppercase tracking-wider text-white">
+                            Predeterminada
+                          </span>
+                        ) : null}
+                      </span>
+                      <span
+                        className={`mt-1 block whitespace-pre-wrap text-sm ${PULSE.body}`}
+                      >
+                        {a.address}
+                      </span>
+                      {a.phone ? (
+                        <span className={`text-xs ${PULSE.body}`}>
+                          Tel.: {a.phone}
+                        </span>
+                      ) : null}
+                    </label>
+                  </li>
+                );
+              })}
+            </ul>
+          )}
+          <div className="mt-4 sm:hidden">
+            <Link
+              href="/cart/ubicacion"
+              className={`${PULSE.btnSecondary} w-full text-center`}
+            >
+              + Nueva dirección
+            </Link>
+          </div>
+        </section>
+      ) : null}
+
       <div className="grid gap-6 lg:grid-cols-[1.2fr_1fr]">
         <section className={`${PULSE.card} p-6 sm:p-8`}>
           <h2 className={PULSE.h2}>Datos de la tarjeta</h2>
@@ -280,12 +500,13 @@ export default function CheckoutPage() {
             ).map(([key, label]) => (
               <span
                 key={key}
-                className={`rounded-full border px-3 py-1 text-xs font-semibold ${
+                className={`inline-flex items-center gap-2 rounded-full border px-3 py-1 text-xs font-semibold ${
                   brand === key
                     ? "border-[#1877F2] bg-[#E7F3FF] text-[#1877F2]"
                     : "border-[#DADDE1] bg-white text-[#65676B]"
                 }`}
               >
+                <BrandLogo brand={key} />
                 {label}
                 {brand === key ? " · detectada" : ""}
               </span>
@@ -425,9 +646,13 @@ export default function CheckoutPage() {
               <span>Impuestos</span>
               <span>${taxes.toFixed(2)}</span>
             </div>
-            <div className="flex justify-between pt-2 text-base font-bold text-[#1C1E21]">
-              <span>Total</span>
-              <span>${total.toFixed(2)}</span>
+            <div className="mt-3 flex items-center justify-between gap-3 rounded-full border border-[#1877F2]/35 bg-gradient-to-r from-[#E7F3FF] via-[#DCEEFE] to-[#E7F3FF] px-4 py-3 shadow-[0_4px_16px_rgba(24,119,242,0.18)] ring-1 ring-inset ring-white/60">
+              <span className="text-sm font-bold uppercase tracking-wide text-[#1877F2]">
+                Total
+              </span>
+              <span className="text-2xl font-extrabold tabular-nums text-[#1877F2] drop-shadow-[0_1px_2px_rgba(24,119,242,0.25)]">
+                ${total.toFixed(2)}
+              </span>
             </div>
           </div>
         </aside>

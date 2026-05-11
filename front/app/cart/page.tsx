@@ -93,11 +93,11 @@ function CartPage() {
   const empty = hydrated && items.length === 0;
 
   return (
-    <PageShell>
-      <section className={`mb-8 ${PULSE.card} p-6 sm:p-10`}>
+    <PageShell compactTop>
+      <section className={`mb-4 ${PULSE.card} px-6 py-3 sm:px-10 sm:py-4`}>
         <p className={PULSE.kicker}>CHECKOUT PULSE</p>
-        <h1 className={`mt-2 ${PULSE.h1}`}>Carrito de compras</h1>
-        <p className={`mt-3 max-w-3xl ${PULSE.body}`}>
+        <h1 className={`mt-1 ${PULSE.h1}`}>Carrito de compras</h1>
+        <p className={`mt-1 max-w-3xl ${PULSE.body}`}>
           Revisa tus productos, confirma cantidades y completa tu pedido con una
           experiencia segura y profesional.
         </p>
@@ -167,16 +167,16 @@ function CartPage() {
         </section>
       ) : hydrated && !clientUser ? (
         <section
-          className={`mb-6 rounded-2xl border border-[#1877F2]/20 bg-[#E7F3FF]/50 p-6 sm:p-8`}
+          className={`mb-4 rounded-2xl border border-[#1877F2]/20 bg-[#E7F3FF]/50 px-6 py-3 sm:px-8 sm:py-4`}
         >
           <p className="text-sm font-semibold text-[#1C1E21]">
             Inicia sesión para asociar el pedido a tu cuenta
           </p>
-          <p className={`mt-2 text-sm ${PULSE.body}`}>
+          <p className={`mt-1 text-sm ${PULSE.body}`}>
             Así podremos mostrar tu nombre y correo en el checkout y guardar tu
             historial.
           </p>
-          <div className="mt-4 flex flex-wrap gap-3">
+          <div className="mt-3 flex flex-wrap gap-3">
             <Link href="/login" className={PULSE.btnPrimary}>
               Iniciar sesión
             </Link>
@@ -270,16 +270,38 @@ function CartPage() {
             </div>
 
             <div className="mt-6 border-t border-[#1877F2]/10 pt-6">
-              <Link
-                href="/cart/ubicacion"
-                className={`${PULSE.btnSecondary} inline-flex w-full cursor-pointer items-center justify-center py-3 text-center sm:w-auto`}
-              >
-                Elegir ubicación en mapa
-              </Link>
+              {clientUser ? (
+                <Link
+                  href="/cart/ubicacion"
+                  className={`${PULSE.btnSecondary} inline-flex w-full cursor-pointer items-center justify-center py-3 text-center sm:w-auto`}
+                >
+                  Elegir dirección de envío
+                </Link>
+              ) : (
+                <span
+                  aria-disabled="true"
+                  title="Inicia sesión para elegir dirección de envío"
+                  className={`${PULSE.btnSecondary} inline-flex w-full items-center justify-center py-3 text-center opacity-60 cursor-not-allowed sm:w-auto`}
+                >
+                  Elegir dirección de envío
+                </span>
+              )}
               <p className={`mt-2 text-xs ${PULSE.body}`}>
-                Código postal, dirección con Google Maps o pin manual; se guarda
-                como dirección de entrega en tu cuenta.
+                {clientUser
+                  ? "Código postal, dirección con Google Maps o pin manual; se guarda como dirección de entrega en tu cuenta."
+                  : "Inicia sesión para elegir la dirección de envío y guardarla en tu cuenta."}
               </p>
+              {!clientUser ? (
+                <p className="mt-2 text-xs">
+                  <Link href="/login" className={PULSE.link}>
+                    Iniciar sesión
+                  </Link>{" "}
+                  ·{" "}
+                  <Link href="/register" className={PULSE.link}>
+                    Crear cuenta
+                  </Link>
+                </p>
+              ) : null}
             </div>
           </article>
 
@@ -317,12 +339,30 @@ function CartPage() {
               </div>
             </div>
 
-            <Link
-              href="/checkout"
-              className={`mt-6 block ${PULSE.btnPrimaryBlock} text-center`}
-            >
-              Proceder al pago
-            </Link>
+            {clientUser ? (
+              <Link
+                href="/checkout"
+                className={`mt-6 block ${PULSE.btnPrimaryBlock} text-center`}
+              >
+                Proceder al pago
+              </Link>
+            ) : (
+              <>
+                <span
+                  aria-disabled="true"
+                  title="Inicia sesión para proceder al pago"
+                  className={`mt-6 block ${PULSE.btnPrimaryBlock} text-center opacity-60 cursor-not-allowed`}
+                >
+                  Proceder al pago
+                </span>
+                <p className="mt-2 text-center text-xs text-[#65676B]">
+                  Necesitas iniciar sesión para continuar.{" "}
+                  <Link href="/login" className={PULSE.link}>
+                    Iniciar sesión
+                  </Link>
+                </p>
+              </>
+            )}
             <Link
               href="/home"
               className={`mt-3 block w-full ${PULSE.btnSecondary} py-3 text-center`}

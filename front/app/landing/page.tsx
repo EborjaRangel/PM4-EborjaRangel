@@ -81,7 +81,7 @@ function LandingPage() {
 
           {/* Derecha: solo copy */}
           <div className="min-w-0 flex-1">
-            <h1 className="max-w-2xl text-4xl font-bold leading-[1.15] tracking-tight text-[#1C1E21] sm:text-5xl lg:text-[3rem]">
+            <h1 className="whitespace-nowrap font-bold leading-[1.15] tracking-tight text-[#1C1E21] text-[clamp(0.95rem,4.8vw,2.6rem)]">
               PULSE: ecommerce{" "}
               <span
                 className="bg-clip-text text-transparent"
@@ -89,9 +89,9 @@ function LandingPage() {
                   backgroundImage: `linear-gradient(90deg, ${FB} 0%, ${TW} 100%)`,
                 }}
               >
-                profesional
-              </span>{" "}
-              para tecnología premium.
+                premium
+              </span>
+              .
             </h1>
 
             <p className="mt-4 max-w-xl text-base leading-relaxed text-[#65676B] sm:text-lg">
