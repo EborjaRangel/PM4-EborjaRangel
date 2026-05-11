@@ -1,11 +1,12 @@
 import { IProduct } from "@/interfaces/product.interface";
 import { getCurrentUser } from "@/lib/authStorage";
+import { fetchProducts } from "@/lib/productCatalog";
 import { fetchRemoteCartRaw, putRemoteCartPayload } from "@/lib/cartRemote";
 
 /**
  * Carrito:
  * - Invitado (sin sesión): solo `localStorage` (`pulse_cart_guest`). No hay llamadas al backend.
- * - Usuario logueado: Postgres vía API (persistencia entre dispositivos) + cache local por usuario
+ * - Usuario con sesión iniciada: Postgres vía API (persistencia entre dispositivos) + caché local por usuario
  *   (`pulse_cart_u_<id>`) para lectura inmediata y resiliencia si falla la red.
  */
 
@@ -139,7 +140,7 @@ function cancelScheduledPush(userId: string) {
   pushTimers.delete(userId);
 }
 
-/** Persistencia remota: únicamente si hay usuario logueado. */
+/** Persistencia remota: únicamente si hay usuario con sesión iniciada. */
 function scheduleRemotePersist(userId: string, items: ICartItem[]) {
   cancelScheduledPush(userId);
   const timerId = setTimeout(() => {
@@ -268,13 +269,36 @@ export function clearCart(): ICartItem[] {
   if (!canUseStorage()) return [];
   saveCartToKey(getActiveCartStorageKey(), []);
   notifyCartUpdated();
-  // Logueado: vaciar también en servidor. Invitado: solo localStorage (sin PUT).
+  // Con sesión: vaciar también en el servidor. Invitado: solo localStorage (sin PUT).
   const user = getCurrentUser();
   if (user) {
     cancelScheduledPush(user.id);
     void putRemoteCartPayload(user.id, []).catch(() => {});
   }
   return [];
+}
+
+/** Quita del carrito ítems cuyo producto ya no existe en catálogo (baja permanente en BD). */
+export function pruneCartToExistingProductIds(validIds: Set<number>): void {
+  if (!canUseStorage()) return;
+  const items = getCart();
+  const next = items.filter((it) => validIds.has(it.id));
+  if (next.length === items.length) return;
+  saveCart(next);
+}
+
+/**
+ * Alinea el carrito con `GET /products`. Si falla la red, no se vacía el carrito.
+ * Convoca tras cambios de catálogo (altas/bajas) para que no queden productos eliminados.
+ */
+export async function pruneCartAgainstCatalog(): Promise<void> {
+  if (!canUseStorage()) return;
+  try {
+    const products = await fetchProducts();
+    pruneCartToExistingProductIds(new Set(products.map((p) => p.id)));
+  } catch {
+    /* sin catálogo no tocamos el carrito */
+  }
 }
 
 /** Subtotal/envío/taxes/total con la misma fórmula usada antes en el mock. */

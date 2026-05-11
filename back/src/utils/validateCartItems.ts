@@ -7,7 +7,7 @@ export function assertCartItemsShape(items: unknown): unknown[] {
   }
   for (const row of items) {
     if (!row || typeof row !== "object") {
-      throw new ClientError("Formato invalido en items del carrito.", 400);
+      throw new ClientError("Formato inválido en artículos del carrito.", 400);
     }
     const it = row as Record<string, unknown>;
     const id = Number(it.id);
@@ -15,16 +15,16 @@ export function assertCartItemsShape(items: unknown): unknown[] {
     const price = Number(it.price);
     const qty = Number(it.qty);
     if (!Number.isInteger(id) || id < 1) {
-      throw new ClientError("Formato invalido en items del carrito.", 400);
+      throw new ClientError("Formato inválido en artículos del carrito.", 400);
     }
     if (!name.trim()) {
-      throw new ClientError("Formato invalido en items del carrito.", 400);
+      throw new ClientError("Formato inválido en artículos del carrito.", 400);
     }
     if (!Number.isFinite(price) || price < 0) {
-      throw new ClientError("Formato invalido en items del carrito.", 400);
+      throw new ClientError("Formato inválido en artículos del carrito.", 400);
     }
     if (!Number.isInteger(qty) || qty < 1) {
-      throw new ClientError("Formato invalido en items del carrito.", 400);
+      throw new ClientError("Formato inválido en artículos del carrito.", 400);
     }
   }
   return items;

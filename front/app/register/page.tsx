@@ -54,7 +54,7 @@ export default function RegisterPage() {
         <p className={`mt-4 text-sm ${PULSE.body}`}>
           Ya tienes cuenta?{" "}
           <Link href="/login" className={PULSE.link}>
-            Inicia sesion
+            Inicia sesión
           </Link>
         </p>
       </section>

@@ -1,4 +1,4 @@
-/** Variantes de consulta para Nominatim con direcciones mexicanas compuestas (multilinea). */
+/** Variantes de consulta para Nominatim con direcciones mexicanas compuestas (multilínea). */
 
 function stripBetweenLines(lines: string[]): string[] {
   return lines.filter((l) => !/^entre calles\b/i.test(l));

@@ -2,25 +2,20 @@ import type { NextConfig } from "next";
 import path from "path";
 import { fileURLToPath } from "url";
 import { loadEnvConfig } from "@next/env";
+import { resolveProxyTargetForServer } from "./lib/apiProxyTarget";
 
 /** Carga `.env*` desde esta carpeta aunque `npm run dev` se ejecute con otro `cwd`. */
 const frontRoot = path.dirname(fileURLToPath(import.meta.url));
 loadEnvConfig(frontRoot);
 
-/** Proxy del API: rewrite de `/pulse-api-proxy/*` → backend (comportamiento original).
- *  Por defecto local: `http://127.0.0.1:3000`. En Vercel define `PULSE_BACKEND_URL`
- *  o `PULSE_PROXY_TARGET` en Environment Variables y redeploy (se lee en el build).
- */
-const proxyTargetRaw =
-  process.env.PULSE_PROXY_TARGET ||
-  process.env.PULSE_BACKEND_URL ||
-  "http://127.0.0.1:3000";
-const pulseProxyDestination = `${proxyTargetRaw.replace(/\/$/, "")}/:path*`;
+/** Proxy: `/pulse-api-proxy/*` → backend (ver `lib/apiProxyTarget.ts`). */
+const pulseProxyDestination = `${resolveProxyTargetForServer()}/:path*`;
 
 const nextConfig: NextConfig = {
-  /** Permite HMR y recursos dev cuando entras por IP LAN (celular en la misma WiFi). */
+  /** HMR / webpack en dev: LAN, ngrok y hosts extra vía ALLOWED_DEV_ORIGINS (sin https://). */
   allowedDevOrigins: [
     "192.168.1.248",
+    "tasty-massager-fleshed.ngrok-free.dev",
     ...(process.env.ALLOWED_DEV_ORIGINS?.split(/[, ]+/).map((s) => s.trim()).filter(Boolean) ??
       []),
   ],

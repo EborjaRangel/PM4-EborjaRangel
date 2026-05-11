@@ -209,15 +209,15 @@ function CardContainer() {
           {filteredProducts.map((p: IProduct) => (
             <Card
               key={p.id}
-              className={`group overflow-hidden ${PULSE.cardTight} border-[#1877F2]/12 p-0 transition hover:-translate-y-1 hover:border-[#1877F2]/25 hover:shadow-[0_12px_40px_rgba(24,119,242,0.15)]`}
-              style={{ marginBottom: 0 }}
+              className={`group flex h-full min-h-0 flex-col overflow-hidden ${PULSE.cardTight} border-[#1877F2]/12 p-0 transition hover:-translate-y-1 hover:border-[#1877F2]/25 hover:shadow-[0_12px_40px_rgba(24,119,242,0.15)]`}
+              style={{ marginBottom: 0, padding: 0 }}
             >
-              <div className="flex flex-col items-start">
-                <div className="relative h-60 w-full">
+              <div className="flex h-full min-h-0 flex-col items-stretch pt-4">
+                <div className="relative h-60 w-full shrink-0">
                   <CatalogImage src={p.image} alt={p.name} />
                 </div>
 
-                <div className="w-full p-5 text-left">
+                <div className="flex min-h-0 flex-1 flex-col p-5 text-left">
                   <h3 className="m-0 text-lg font-semibold text-[#1C1E21]">
                     {p.name}
                   </h3>
@@ -230,15 +230,15 @@ function CardContainer() {
                   <p className="mt-1 text-xs text-[#65676B]">
                     Stock: {p.stock} unidades
                   </p>
-                </div>
 
-                <div className="flex w-full justify-end px-5 pb-5">
-                  <Link
-                    href={`/product/${p.id}`}
-                    className="inline-flex h-10 w-36 cursor-pointer items-center justify-center rounded-full bg-[#1877F2] text-sm font-semibold text-white shadow-[0_4px_14px_rgba(24,119,242,0.35)] transition hover:brightness-105"
-                  >
-                    Ver
-                  </Link>
+                  <div className="mt-auto flex w-full justify-end pt-4">
+                    <Link
+                      href={`/product/${p.id}`}
+                      className="inline-flex h-10 w-36 shrink-0 cursor-pointer items-center justify-center rounded-full bg-[#1877F2] text-sm font-semibold text-white shadow-[0_4px_14px_rgba(24,119,242,0.35)] transition hover:brightness-105"
+                    >
+                      Ver
+                    </Link>
+                  </div>
                 </div>
               </div>
             </Card>

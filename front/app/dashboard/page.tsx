@@ -90,7 +90,7 @@ export default function DashboardPage() {
           {isAdmin ? (
             <>
               Lista de cuentas almacenadas en Postgres. Si arrancas la API por primera vez puede
-              crearse automaticamente una cuenta demo de administracion:{" "}
+              crearse automáticamente una cuenta demo de administración:{" "}
               <span className="font-mono text-[#1C1E21]">
                 {BUILT_IN_ADMIN_EMAIL}
               </span>
@@ -113,20 +113,20 @@ export default function DashboardPage() {
             </p>
           </article>
           <article className={PULSE.surfaceMuted}>
-            <p className="text-xs text-[#65676B]">Usuario logueado</p>
+            <p className="text-xs text-[#65676B]">Usuario en sesión</p>
             <p className="mt-1 font-semibold text-[#1C1E21]">
               {currentUser.fullName}
             </p>
             <p className="text-sm text-[#65676B]">{currentUser.email}</p>
           </article>
           <article className={PULSE.surfaceMuted}>
-            <p className="text-xs text-[#65676B]">Usuario mas activo</p>
+            <p className="text-xs text-[#65676B]">Usuario más activo</p>
             <p className="mt-1 font-semibold text-[#1C1E21]">
               {mostActiveUser ? mostActiveUser.fullName : "Sin datos"}
             </p>
             <p className="text-sm text-[#65676B]">
               {mostActiveUser
-                ? `${mostActiveUser.loginCount} inicios de sesion`
+                ? `${mostActiveUser.loginCount} inicios de sesión`
                 : ""}
             </p>
           </article>
@@ -139,7 +139,7 @@ export default function DashboardPage() {
                 <th className="px-4 py-3 font-semibold">Nombre</th>
                 <th className="px-4 py-3 font-semibold">Correo</th>
                 <th className="px-4 py-3 font-semibold">Login count</th>
-                <th className="px-4 py-3 font-semibold">Ultimo acceso</th>
+                <th className="px-4 py-3 font-semibold">Último acceso</th>
                 <th className="px-4 py-3 font-semibold">Estado</th>
               </tr>
             </thead>
@@ -166,7 +166,7 @@ export default function DashboardPage() {
                     <td className="px-4 py-3">
                       {isCurrent ? (
                         <span className="rounded-full bg-[#1877F2]/15 px-3 py-1 text-xs font-semibold text-[#1877F2]">
-                          En sesion
+                          Sesión activa
                         </span>
                       ) : (
                         <span className="rounded-full bg-[#F0F2F5] px-3 py-1 text-xs font-semibold text-[#65676B]">

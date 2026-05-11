@@ -79,8 +79,8 @@ export default function PurchaseShippingMapFromAddress({
   if (address.trim().length >= 8) {
     return (
       <p className={`mt-3 text-xs text-[#65676B] ${PULSE.body}`}>
-        No se pudo situar la direccion en el mapa automaticamente. Revisa el
-        texto de envio o acota calle y codigo postal en tu perfil.
+        No se pudo situar la dirección en el mapa automáticamente. Revisa el
+        texto de envío o acota calle y código postal en tu perfil.
       </p>
     );
   }

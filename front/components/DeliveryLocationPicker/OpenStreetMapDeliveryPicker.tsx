@@ -104,7 +104,7 @@ export default function OpenStreetMapDeliveryPicker() {
           | { ok: true; parts: DeliveryAddressParts }
           | { ok: false; message?: string };
         if (!data.ok) {
-          setSaveErr(data.message ?? "No se pudo leer la direccion.");
+          setSaveErr(data.message ?? "No se pudo leer la dirección.");
           return;
         }
         applyParts(data.parts);
@@ -150,7 +150,7 @@ export default function OpenStreetMapDeliveryPicker() {
   async function handlePostalSearch() {
     const digits = cpQuery.replace(/\D/g, "").slice(0, 5);
     if (digits.length < 4) {
-      setSaveErr("Ingresa un codigo postal valido (4 o 5 digitos).");
+      setSaveErr("Ingresa un código postal válido (4 o 5 dígitos).");
       return;
     }
     await runSearch(`${digits}, México`);
@@ -188,7 +188,7 @@ export default function OpenStreetMapDeliveryPicker() {
       const msg =
         e instanceof ValidationError
           ? e.errors[0] ?? e.message
-          : "Revisa los datos de la direccion.";
+          : "Revisa los datos de la dirección.";
       setSaveErr(msg);
       return;
     }
@@ -373,7 +373,7 @@ export default function OpenStreetMapDeliveryPicker() {
             disabled={!loggedIn}
             className={`${PULSE.btnPrimaryBlock} cursor-pointer disabled:cursor-not-allowed disabled:opacity-60`}
           >
-            {loggedIn ? "Guardar direccion de entrega" : "Inicia sesion para guardar"}
+            {loggedIn ? "Guardar dirección de entrega" : "Inicia sesión para guardar"}
           </button>
           {!loggedIn ? (
             <Link href="/login" className={`inline-block text-sm ${PULSE.link}`}>
@@ -386,7 +386,7 @@ export default function OpenStreetMapDeliveryPicker() {
       <div className="flex flex-col gap-3">
         <p className={`text-xs ${PULSE.body}`}>
           Mapa gratuito OpenStreetMap. Toca el mapa o arrastra el pin; la
-          direccion se completa con Nominatim (uso educativo, sin tarjeta).
+          la dirección se completa con Nominatim (uso educativo, sin tarjeta).
         </p>
         <div className="relative z-0 min-h-[420px] w-full overflow-hidden rounded-2xl border border-[#1877F2]/15 shadow-[0_8px_32px_rgba(24,119,242,0.12)]">
           <MapContainer

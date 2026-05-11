@@ -179,7 +179,7 @@ function DeliveryMapInner({ apiKey }: DeliveryMapInnerProps) {
   function handleSearchPostal() {
     const digits = cpQuery.replace(/\D/g, "").slice(0, 5);
     if (digits.length < 4) {
-      setSaveErr("Ingresa un codigo postal valido (4 o 5 digitos).");
+      setSaveErr("Ingresa un código postal válido (4 o 5 dígitos).");
       return;
     }
     setSaveErr("");
@@ -231,7 +231,7 @@ function DeliveryMapInner({ apiKey }: DeliveryMapInnerProps) {
       const msg =
         e instanceof ValidationError
           ? e.errors[0] ?? e.message
-          : "Revisa los datos de la direccion.";
+          : "Revisa los datos de la dirección.";
       setSaveErr(msg);
       return;
     }
@@ -414,7 +414,7 @@ function DeliveryMapInner({ apiKey }: DeliveryMapInnerProps) {
             disabled={!loggedIn}
             className={`${PULSE.btnPrimaryBlock} cursor-pointer disabled:cursor-not-allowed disabled:opacity-60`}
           >
-            {loggedIn ? "Guardar direccion de entrega" : "Inicia sesion para guardar"}
+            {loggedIn ? "Guardar dirección de entrega" : "Inicia sesión para guardar"}
           </button>
           {!loggedIn ? (
             <Link href="/login" className={`inline-block text-sm ${PULSE.link}`}>

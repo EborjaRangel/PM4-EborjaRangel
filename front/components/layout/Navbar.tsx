@@ -57,6 +57,14 @@ function Navbar() {
         ]),
   ];
 
+  function navLinkIsActive(href: string) {
+    if (pathname === href) return true;
+    if (href === "/admin/products" && pathname.startsWith("/admin/products")) {
+      return true;
+    }
+    return false;
+  }
+
   function handleLogout() {
     logoutUser();
     setCurrentUser(null);
@@ -66,63 +74,69 @@ function Navbar() {
 
   return (
     <header className="sticky top-0 z-50 border-b border-[#DADDE1] bg-white/95 shadow-[0_1px_0_rgba(24,119,242,0.06)] backdrop-blur">
-      <nav className="mx-auto flex w-full max-w-6xl items-center justify-between gap-3 px-4 py-3 text-[#1C1E21] sm:px-6 sm:py-4">
-        <Link
-          href="/landing"
-          className="flex min-w-0 items-center gap-2 sm:gap-3"
-        >
-          <Image
-            src="/brand/dreams-time-mark.png"
-            alt="PULSE logo"
-            width={42}
-            height={42}
-            className="h-9 w-9 shrink-0 rounded-full border border-[#1877F2]/35 object-cover shadow-sm sm:h-10 sm:w-10"
-            priority
-          />
-          <div className="min-w-0 leading-tight">
-            <span className="block truncate text-base font-bold tracking-wide text-[#1877F2]">
-              PULSE
-            </span>
-            <span className="block truncate text-xs text-[#65676B]">
-              Dreams Time
-            </span>
-          </div>
-        </Link>
-
-        <ul className="hidden items-center gap-5 text-sm font-medium lg:flex">
-          {navLinks.map((link) => (
-            <li key={link.href}>
-              <Link
-                className="text-[#1C1E21] transition hover:text-[#1877F2]"
-                href={link.href}
-              >
-                {link.label}
-              </Link>
-            </li>
-          ))}
-        </ul>
-
-        <div className="hidden items-center gap-3 lg:flex">
-          {currentUser ? (
-            <>
-              <span
-                className="max-w-[min(14rem,28vw)] truncate text-sm font-semibold text-[#1C1E21]"
-                title={currentUser.fullName}
-              >
-                {currentUser.fullName}
+      <nav className="mx-auto flex w-full max-w-6xl items-center justify-between gap-2 px-4 py-3 text-[#1C1E21] sm:gap-3 sm:px-6 sm:py-4">
+        <div className="flex min-w-0 flex-1 items-center gap-2 sm:gap-3">
+          <Link
+            href="/landing"
+            className="flex shrink-0 items-center gap-2 sm:gap-3"
+          >
+            <Image
+              src="/brand/dreams-time-mark.png"
+              alt="PULSE logo"
+              width={42}
+              height={42}
+              className="h-9 w-9 shrink-0 rounded-full border border-[#1877F2]/35 object-cover shadow-sm sm:h-10 sm:w-10"
+              priority
+            />
+            <div className="min-w-0 leading-tight">
+              <span className="block truncate text-base font-bold tracking-wide text-[#1877F2]">
+                PULSE
               </span>
-              <button
-                type="button"
-                onClick={handleLogout}
-                className="cursor-pointer shrink-0 rounded-full border border-[#1877F2]/40 bg-[#1877F2]/10 px-4 py-2 text-xs font-semibold text-[#1877F2] transition hover:bg-[#1877F2]/15"
-              >
-                Cerrar sesion
-              </button>
-            </>
+              <span className="block truncate text-xs text-[#65676B]">
+                Dreams Time
+              </span>
+            </div>
+          </Link>
+          {currentUser ? (
+            <span
+              className="min-w-0 truncate text-sm font-semibold text-[#1C1E21] sm:text-base"
+              title={currentUser.fullName}
+            >
+              {currentUser.fullName}
+            </span>
+          ) : null}
+        </div>
+
+        <div className="hidden items-center gap-5 lg:flex">
+          <ul className="flex items-center gap-5 text-sm font-medium">
+            {navLinks.map((link) => (
+              <li key={link.href}>
+                <Link
+                  className={
+                    navLinkIsActive(link.href)
+                      ? "font-semibold text-[#1877F2]"
+                      : "text-[#1C1E21] transition hover:text-[#1877F2]"
+                  }
+                  href={link.href}
+                  aria-current={navLinkIsActive(link.href) ? "page" : undefined}
+                >
+                  {link.label}
+                </Link>
+              </li>
+            ))}
+          </ul>
+          {currentUser ? (
+            <button
+              type="button"
+              onClick={handleLogout}
+              className="cursor-pointer shrink-0 rounded-full border border-[#1877F2]/40 bg-[#1877F2]/10 px-4 py-2 text-xs font-semibold text-[#1877F2] transition hover:bg-[#1877F2]/15"
+            >
+              Cerrar sesión
+            </button>
           ) : (
             <Link
               href="/login"
-              className="rounded-full border border-[#1877F2]/40 bg-[#1877F2]/10 px-4 py-2 text-xs font-semibold text-[#1877F2] transition hover:bg-[#1877F2]/15"
+              className="shrink-0 rounded-full border border-[#1877F2]/40 bg-[#1877F2]/10 px-4 py-2 text-xs font-semibold text-[#1877F2] transition hover:bg-[#1877F2]/15"
             >
               Mi cuenta
             </Link>
@@ -132,7 +146,7 @@ function Navbar() {
         <button
           type="button"
           onClick={() => setMenuOpen((v) => !v)}
-          aria-label={menuOpen ? "Cerrar menu" : "Abrir menu"}
+          aria-label={menuOpen ? "Cerrar menú" : "Abrir menú"}
           aria-expanded={menuOpen}
           aria-controls="mobile-nav"
           className="inline-flex h-10 w-10 shrink-0 cursor-pointer items-center justify-center rounded-full border border-[#1877F2]/30 bg-white text-[#1877F2] transition hover:bg-[#E7F3FF] lg:hidden"
@@ -179,7 +193,7 @@ function Navbar() {
         >
           <ul className="mx-auto flex w-full max-w-6xl flex-col gap-1 px-4 py-3 sm:px-6">
             {navLinks.map((link) => {
-              const active = pathname === link.href;
+              const active = navLinkIsActive(link.href);
               return (
                 <li key={link.href}>
                   <Link
@@ -199,21 +213,13 @@ function Navbar() {
             })}
             <li className="mt-2 border-t border-[#DADDE1] pt-3">
               {currentUser ? (
-                <div className="flex flex-col gap-2 px-1">
-                  <p
-                    className="truncate px-2 text-sm font-semibold text-[#1C1E21]"
-                    title={currentUser.fullName}
-                  >
-                    {currentUser.fullName}
-                  </p>
-                  <button
-                    type="button"
-                    onClick={handleLogout}
-                    className="w-full cursor-pointer rounded-full border border-[#1877F2]/40 bg-[#1877F2]/10 px-4 py-3 text-sm font-semibold text-[#1877F2] transition hover:bg-[#1877F2]/15"
-                  >
-                    Cerrar sesion
-                  </button>
-                </div>
+                <button
+                  type="button"
+                  onClick={handleLogout}
+                  className="w-full cursor-pointer rounded-full border border-[#1877F2]/40 bg-[#1877F2]/10 px-4 py-3 text-sm font-semibold text-[#1877F2] transition hover:bg-[#1877F2]/15"
+                >
+                  Cerrar sesión
+                </button>
               ) : (
                 <Link
                   href="/login"

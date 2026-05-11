@@ -7,7 +7,7 @@ import { useParams, useRouter } from "next/navigation";
 import PageShell from "@/components/layout/PageShell";
 import ConfirmPurchaseModal from "@/components/ConfirmPurchaseModal";
 import { PULSE } from "@/lib/pulse";
-import { fetchProductById } from "@/lib/productCatalog";
+import { CATALOG_UPDATED_EVENT, fetchProductById } from "@/lib/productCatalog";
 import { addToCart } from "@/lib/cartStorage";
 import { categoryLabel } from "@/data/productCategories";
 import { IProduct } from "@/interfaces/product.interface";
@@ -192,6 +192,34 @@ export default function ProductPageById() {
     };
   }, [productId]);
 
+  useEffect(() => {
+    if (!Number.isFinite(productId) || productId < 1) return;
+
+    let cancelled = false;
+
+    function syncFromCatalog() {
+      fetchProductById(productId)
+        .then((p) => {
+          if (cancelled) return;
+          setProduct(p);
+          setError(null);
+        })
+        .catch((err: unknown) => {
+          if (cancelled) return;
+          setProduct(null);
+          const message =
+            err instanceof Error ? err.message : "Error al cargar el producto.";
+          setError(message);
+        });
+    }
+
+    window.addEventListener(CATALOG_UPDATED_EVENT, syncFromCatalog);
+    return () => {
+      cancelled = true;
+      window.removeEventListener(CATALOG_UPDATED_EVENT, syncFromCatalog);
+    };
+  }, [productId]);
+
   const carouselImages = useMemo(() => {
     if (!product) return [];
     const list =
@@ -239,7 +267,7 @@ export default function ProductPageById() {
             {error ?? "No encontramos este producto."}
           </p>
           <Link href="/home" className={`mt-6 inline-block ${PULSE.link}`}>
-            Volver al catalogo
+            Volver al catálogo
           </Link>
         </section>
       </PageShell>
@@ -257,7 +285,7 @@ export default function ProductPageById() {
             href="/home"
             className="text-sm font-medium text-[#1877F2] hover:text-[#166FE5]"
           >
-            ← Volver al catalogo
+            ← Volver al catálogo
           </Link>
         </div>
 

@@ -1,22 +1,54 @@
 /**
- * URL base del API Express.
+ * URL base del API Express (navegador vs SSR).
  *
- * 1. `NEXT_PUBLIC_API_URL` si está definido (API en otro dominio / segundo ngrok directo).
- * 2. En el navegador: mismo origen + `/pulse-api-proxy` → Next reescribe al backend
- *    (`next.config.ts`), destino por defecto `http://127.0.0.1:3000`.
- * 3. Durante SSR (sin window): llamada directa a `PULSE_PROXY_TARGET` o `127.0.0.1:3000`.
+ * - Sin `NEXT_PUBLIC_API_URL`: mismo origen + `/pulse-api-proxy` → :3000.
+ * - `NEXT_PUBLIC_API_URL` en localhost/127.0.0.1: mismo origen + `/pulse-api-proxy` (evita CORS).
+ * - Ngrok: `/api/pulse-backend` (servidor reenvía con cabecera ngrok).
+ * - Otro dominio: petición directa (CORS en el API).
+ *
+ * Si el API local en :3000 funciona pero sigues teniendo ngrok en `.env`, define
+ * `NEXT_PUBLIC_USE_LOCAL_API=true` para forzar el proxy a :3000.
  */
-export function resolveApiOrigin(): string {
-  const fromEnv =
-    typeof process !== "undefined" && process.env.NEXT_PUBLIC_API_URL
-      ? process.env.NEXT_PUBLIC_API_URL.replace(/\/$/, "").trim()
-      : "";
+import {
+  isLoopbackApiUrl,
+  isNgrokUrl,
+  publicApiUrl,
+  useLocalApiFirst,
+} from "@/lib/apiProxyTarget";
 
-  if (fromEnv) return fromEnv;
+export function resolveApiOrigin(): string {
+  const fromEnv = typeof process !== "undefined" ? publicApiUrl() : "";
+  const ngrok = isNgrokUrl(fromEnv);
+  const loopback = isLoopbackApiUrl(fromEnv);
 
   if (typeof window !== "undefined") {
+    if (useLocalApiFirst()) {
+      return `${window.location.origin}/pulse-api-proxy`;
+    }
+    if (ngrok) {
+      return `${window.location.origin}/api/pulse-backend`;
+    }
+    if (loopback) {
+      return `${window.location.origin}/pulse-api-proxy`;
+    }
+    if (process.env.NEXT_PUBLIC_FORCE_API_PROXY === "true") {
+      return `${window.location.origin}/pulse-api-proxy`;
+    }
+    if (fromEnv) return fromEnv;
     return `${window.location.origin}/pulse-api-proxy`;
   }
+
+  if (useLocalApiFirst()) {
+    return (
+      process.env.PULSE_PROXY_TARGET ||
+      process.env.PULSE_BACKEND_URL ||
+      "http://127.0.0.1:3000"
+    )
+      .replace(/\/$/, "")
+      .trim();
+  }
+
+  if (fromEnv) return fromEnv;
 
   const internal = (
     process.env.PULSE_PROXY_TARGET ||

@@ -10,25 +10,25 @@ export const deliveryAddressYup = Yup.string()
   .trim()
   .min(
     12,
-    "Indica una direccion mas completa: calle, numero, ciudad o codigo postal.",
+    "Indica una dirección más completa: calle, número, ciudad o código postal.",
   )
-  .max(240, "La direccion supera el maximo permitido.")
+  .max(240, "La dirección supera el máximo permitido.")
   .matches(
     /[A-Za-zÁÉÍÓÚáéíóúÑñÜü]/,
     "Debe incluir el nombre de calle, colonia o ciudad.",
   )
   .matches(
     /\d/,
-    "Incluye al menos un numero (numero exterior/interior o codigo postal).",
+    "Incluye al menos un número (número exterior/interior o código postal).",
   )
-  .required("La direccion es obligatoria.");
+  .required("La dirección es obligatoria.");
 
 export const deliveryPhoneYup = Yup.string()
   .trim()
-  .required("El telefono es obligatorio.")
+  .required("El teléfono es obligatorio.")
   .test(
     "phone-digits",
-    "El telefono debe tener entre 9 y 15 digitos.",
+    "El teléfono debe tener entre 9 y 15 dígitos.",
     (val) => {
       const d = normalizePhoneDigits(val ?? "");
       return d.length >= 9 && d.length <= 15;

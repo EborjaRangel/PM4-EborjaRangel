@@ -191,14 +191,14 @@ function CartPage() {
         <section className={`${PULSE.card} p-6 text-center sm:p-12`}>
           <h2 className={PULSE.h2}>Tu carrito esta vacio</h2>
           <p className={`mx-auto mt-3 max-w-md ${PULSE.body}`}>
-            Cuando agregues productos desde el catalogo, aparecerán aqui con sus
+            Cuando agregues productos desde el catálogo, aparecerán aquí con sus
             datos reales.
           </p>
           <Link
             href="/home"
             className={`${PULSE.btnPrimary} mt-6 inline-block`}
           >
-            Ir al catalogo
+            Ir al catálogo
           </Link>
         </section>
       ) : (

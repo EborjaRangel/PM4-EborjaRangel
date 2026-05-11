@@ -2,9 +2,10 @@ import axios from "axios";
 import {
   AUTH_TOKEN_LS_KEY,
 } from "@/lib/authConstants";
+import { mergeApiHeaders } from "@/lib/apiRequestHeaders";
 import { resolveApiOrigin } from "@/lib/resolveApiOrigin";
 
-function bearerHeaders(): { Authorization?: string } {
+function bearerHeaders(): Record<string, string> {
   if (typeof window === "undefined") return {};
   const t = localStorage.getItem(AUTH_TOKEN_LS_KEY);
   return t?.trim() ? { Authorization: `Bearer ${t.trim()}` } : {};
@@ -18,10 +19,14 @@ export interface ApiLoginResponse {
 
 export async function loginWithApi(email: string, password: string) {
   const normalizedEmail = email.trim().toLowerCase();
-  return axios.post<ApiLoginResponse>(`${resolveApiOrigin()}/users/login`, {
-    email: normalizedEmail,
-    password,
-  });
+  return axios.post<ApiLoginResponse>(
+    `${resolveApiOrigin()}/users/login`,
+    {
+      email: normalizedEmail,
+      password,
+    },
+    { headers: mergeApiHeaders() },
+  );
 }
 
 export async function registerWithApi(body: {
@@ -37,12 +42,13 @@ export async function registerWithApi(body: {
       ...body,
       email: body.email.trim().toLowerCase(),
     },
+    { headers: mergeApiHeaders() },
   );
 }
 
 export async function fetchMyProfileFromApi() {
   return axios.get<Record<string, unknown>>(`${resolveApiOrigin()}/users/me`, {
-    headers: bearerHeaders(),
+    headers: mergeApiHeaders(bearerHeaders()),
   });
 }
 
@@ -51,14 +57,14 @@ export async function patchMyProfile(body: Record<string, unknown>) {
     `${resolveApiOrigin()}/users/me`,
     body,
     {
-      headers: bearerHeaders(),
+      headers: mergeApiHeaders(bearerHeaders()),
     },
   );
 }
 
 export async function fetchAllUsersAdmin() {
   return axios.get<Record<string, unknown>[]>(`${resolveApiOrigin()}/users`, {
-    headers: bearerHeaders(),
+    headers: mergeApiHeaders(bearerHeaders()),
   });
 }
 

@@ -136,7 +136,7 @@ function RegisterForm({ onSubmit, externalError }: RegisterFormProps) {
           value={formik.values.phone}
           onChange={formik.handleChange}
           onBlur={formik.handleBlur}
-          placeholder="9 a 15 digitos (ej. 5512345678)"
+          placeholder="9 a 15 dígitos (ej. 5512345678)"
           aria-invalid={Boolean(formik.touched.phone && formik.errors.phone)}
         />
         {formik.touched.phone && formik.errors.phone ? (

@@ -3,6 +3,7 @@
  * Invitados no deben usar estos helpers.
  */
 import axios from "axios";
+import { mergeApiHeaders } from "@/lib/apiRequestHeaders";
 import { resolveApiOrigin } from "@/lib/resolveApiOrigin";
 
 function cartBase(): string {
@@ -16,6 +17,7 @@ export async function fetchRemoteCartRaw(
   try {
     const res = await axios.get<{ items?: unknown }>(
       `${cartBase()}/user/${encodeURIComponent(clientUserId)}`,
+      { headers: mergeApiHeaders() },
     );
     const arr = res.data?.items;
     return Array.isArray(arr) ? arr : [];
@@ -31,5 +33,6 @@ export async function putRemoteCartPayload(
   await axios.put(
     `${cartBase()}/user/${encodeURIComponent(clientUserId)}`,
     { items },
+    { headers: mergeApiHeaders() },
   );
 }

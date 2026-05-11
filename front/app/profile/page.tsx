@@ -123,7 +123,7 @@ export default function ProfilePage() {
               </p>
             </div>
             <div className={PULSE.surfaceMuted}>
-              <p className="text-xs text-[#65676B]">Ultimo acceso</p>
+              <p className="text-xs text-[#65676B]">Último acceso</p>
               <p className="mt-1 font-semibold text-[#1C1E21]">
                 {new Date(user.lastLoginAt).toLocaleString()}
               </p>
@@ -149,7 +149,7 @@ export default function ProfilePage() {
             onClick={handleLogout}
             className={`mt-6 ${PULSE.btnGhost}`}
           >
-            Cerrar sesion
+            Cerrar sesión
           </button>
         </article>
 

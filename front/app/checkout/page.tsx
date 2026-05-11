@@ -389,7 +389,7 @@ export default function CheckoutPage() {
             <p className="mt-4 text-sm text-[#65676B]">
               Tu carrito esta vacio.{" "}
               <Link href="/home" className={PULSE.link}>
-                Ir al catalogo
+                Ir al catálogo
               </Link>
             </p>
           ) : (

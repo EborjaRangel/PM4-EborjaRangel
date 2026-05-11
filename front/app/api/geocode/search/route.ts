@@ -69,7 +69,7 @@ export async function GET(req: NextRequest) {
     if (!hit) {
       return NextResponse.json({
         ok: false as const,
-        message: "Sin resultados. Prueba otro texto o codigo postal.",
+        message: "Sin resultados. Prueba otro texto o código postal.",
       });
     }
 

@@ -64,7 +64,7 @@ const productSeeds: ProductSeed[] = [
   {
     id: 6,
     name: 'HomePod mini',
-    description: 'Parlante inteligente compacto para musica y hogar.',
+    description: 'Parlante inteligente compacto para música y hogar.',
     price: 99,
     stock: 10,
     categoryId: 6,
@@ -114,7 +114,7 @@ const productSeeds: ProductSeed[] = [
   {
     id: 11,
     name: 'Silla Gamer Comfort',
-    description: 'Silla comoda con soporte lumbar para largas sesiones.',
+    description: 'Silla cómoda con soporte lumbar para largas sesiones.',
     price: 259,
     stock: 10,
     categoryId: 5,
@@ -134,7 +134,7 @@ const productSeeds: ProductSeed[] = [
   {
     id: 13,
     name: 'Disco SSD 1TB',
-    description: 'Unidad SSD rapida para mejorar tiempos de carga.',
+    description: 'Unidad SSD rápida para mejorar tiempos de carga.',
     price: 99,
     stock: 40,
     categoryId: 1,
@@ -194,7 +194,7 @@ const productSeeds: ProductSeed[] = [
   {
     id: 19,
     name: 'Router WiFi 6',
-    description: 'Router de alto alcance para redes estables y rapidas.',
+    description: 'Router de alto alcance para redes estables y rápidas.',
     price: 149,
     stock: 19,
     categoryId: 1,
@@ -344,7 +344,7 @@ const productSeeds: ProductSeed[] = [
   {
     id: 34,
     name: 'Drone Camara Aerea',
-    description: 'Drone ligero con camara estabilizada para tomas unicas.',
+    description: 'Drone ligero con cámara estabilizada para tomas únicas.',
     price: 399,
     stock: 8,
     categoryId: 4,
@@ -364,7 +364,7 @@ const productSeeds: ProductSeed[] = [
   {
     id: 36,
     name: 'Termostato Inteligente',
-    description: 'Controla la temperatura del hogar desde tu telefono.',
+    description: 'Controla la temperatura del hogar desde tu teléfono.',
     price: 119,
     stock: 20,
     categoryId: 6,
@@ -394,11 +394,11 @@ const productSeeds: ProductSeed[] = [
   {
     id: 39,
     name: 'Cargador Inalambrico',
-    description: 'Carga rapida sin cables para telefonos compatibles.',
+    description: 'Carga rápida sin cables para teléfonos compatibles.',
     price: 39,
     stock: 41,
     categoryId: 3,
-    imageHint: 'Carga inalambrica rapida',
+    imageHint: 'Carga inalámbrica rápida',
     themeColor: '#f59e0b',
   },
   {
@@ -494,7 +494,7 @@ const productSeeds: ProductSeed[] = [
   {
     id: 49,
     name: 'Kit Herramientas Precision',
-    description: 'Herramientas para reparacion de dispositivos electronicos.',
+    description: 'Herramientas para reparación de dispositivos electrónicos.',
     price: 34,
     stock: 39,
     categoryId: 1,
@@ -504,11 +504,11 @@ const productSeeds: ProductSeed[] = [
   {
     id: 50,
     name: 'Lector Codigo Barras',
-    description: 'Escaner rapido para inventarios y puntos de venta.',
+    description: 'Escáner rápido para inventarios y puntos de venta.',
     price: 79,
     stock: 16,
     categoryId: 2,
-    imageHint: 'Escaner de codigos',
+    imageHint: 'Escáner de códigos',
     themeColor: '#10b981',
   },
   {
@@ -554,7 +554,7 @@ const productSeeds: ProductSeed[] = [
   {
     id: 55,
     name: 'Panel Solar Portatil',
-    description: 'Carga dispositivos en exteriores con energia solar.',
+    description: 'Carga dispositivos en exteriores con energía solar.',
     price: 129,
     stock: 12,
     categoryId: 1,

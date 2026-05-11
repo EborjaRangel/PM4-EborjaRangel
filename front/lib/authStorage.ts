@@ -240,7 +240,7 @@ export async function updateCurrentUserPassword(
   newPassword: string,
 ): Promise<{ ok: true } | { ok: false; message: string }> {
   if (!getAuthToken()?.trim()) {
-    return { ok: false, message: "No hay sesion activa." };
+    return { ok: false, message: "No hay sesión activa." };
   }
   try {
     const { data } = await patchMyProfile({
@@ -250,7 +250,7 @@ export async function updateCurrentUserPassword(
     const pub = apiUserRecordToPublicUser(data as Record<string, unknown>);
     const token = getAuthToken();
     if (!token)
-      return { ok: false, message: "No hay sesion activa." };
+      return { ok: false, message: "No hay sesión activa." };
     persistSession(pub, token);
     return { ok: true };
   } catch (e) {
@@ -266,7 +266,7 @@ export async function updateCurrentUserContact(
   phone: string,
 ): Promise<{ ok: true } | { ok: false; message: string }> {
   if (!getAuthToken()?.trim()) {
-    return { ok: false, message: "No hay sesion activa." };
+    return { ok: false, message: "No hay sesión activa." };
   }
   try {
     const { data } = await patchMyProfile({
@@ -276,7 +276,7 @@ export async function updateCurrentUserContact(
     const pub = apiUserRecordToPublicUser(data as Record<string, unknown>);
     const token = getAuthToken();
     if (!token)
-      return { ok: false, message: "No hay sesion activa." };
+      return { ok: false, message: "No hay sesión activa." };
     persistSession(pub, token);
     return { ok: true };
   } catch (e) {
@@ -291,7 +291,7 @@ export async function updateCurrentUserAddressOnly(
   address: string,
 ): Promise<{ ok: true } | { ok: false; message: string }> {
   if (!getAuthToken()?.trim()) {
-    return { ok: false, message: "No hay sesion activa." };
+    return { ok: false, message: "No hay sesión activa." };
   }
   try {
     const { data } = await patchMyProfile({
@@ -300,13 +300,13 @@ export async function updateCurrentUserAddressOnly(
     const pub = apiUserRecordToPublicUser(data as Record<string, unknown>);
     const token = getAuthToken();
     if (!token)
-      return { ok: false, message: "No hay sesion activa." };
+      return { ok: false, message: "No hay sesión activa." };
     persistSession(pub, token);
     return { ok: true };
   } catch (e) {
     if (axios.isAxiosError(e) && e.response) {
       return { ok: false, message: mapAuthApiError(e) };
     }
-    return { ok: false, message: "No se pudo guardar la direccion." };
+    return { ok: false, message: "No se pudo guardar la dirección." };
   }
 }

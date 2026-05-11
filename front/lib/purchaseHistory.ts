@@ -1,5 +1,6 @@
 import axios from "axios";
 import type { ICartItem, ICartTotals } from "@/lib/cartStorage";
+import { mergeApiHeaders } from "@/lib/apiRequestHeaders";
 import { resolveApiOrigin } from "@/lib/resolveApiOrigin";
 
 function purchasesBase(): string {
@@ -119,12 +120,13 @@ function mapApiRecord(r: ApiPurchaseRecord): IPurchaseRecord | null {
   };
 }
 
-/** Historial desde Postgres (mas reciente primero en el servidor). */
+/** Historial desde Postgres (más reciente primero en el servidor). */
 export async function fetchPurchasesByUserId(
   userId: string,
 ): Promise<IPurchaseRecord[]> {
   const res = await axios.get<ApiPurchaseRecord[]>(
     `${purchasesBase()}/user/${encodeURIComponent(userId)}`,
+    { headers: mergeApiHeaders() },
   );
   const list = Array.isArray(res.data) ? res.data : [];
   return list
@@ -161,7 +163,9 @@ export async function recordPurchase(
     };
   }
 
-  const res = await axios.post<ApiPurchaseRecord>(purchasesBase(), payload);
+  const res = await axios.post<ApiPurchaseRecord>(purchasesBase(), payload, {
+    headers: mergeApiHeaders(),
+  });
   const mapped = mapApiRecord(res.data);
   if (!mapped) {
     throw new Error("Respuesta invalida del servidor.");

@@ -5,7 +5,7 @@ import { AUTH_CHANGED_EVENT, getCurrentUser } from "@/lib/authStorage";
 import { hydrateLoggedInUserCart } from "@/lib/cartStorage";
 
 /**
- * Usuarios logueados: sincroniza carrito con el servidor (otros dispositivos).
+ * Usuarios con sesión iniciada: sincroniza el carrito con el servidor (otros dispositivos).
  * Invitados: no hace nada (su carrito sigue solo en localStorage).
  */
 export default function CartRemoteHydrate() {

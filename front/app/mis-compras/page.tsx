@@ -88,7 +88,7 @@ export default function MisComprasPage() {
 
         <div className="mt-4 flex flex-wrap gap-3">
           <Link href="/home" className={PULSE.link}>
-            Ir al catalogo
+            Ir al catálogo
           </Link>
           <span className="text-sm text-[#DADDE1]">|</span>
           <Link href="/profile" className={PULSE.link}>
@@ -115,13 +115,13 @@ export default function MisComprasPage() {
           className={`mt-8 ${PULSE.card} p-8 text-center sm:p-10`}
           role="status"
         >
-          <h2 className={PULSE.h2}>Aun no hay compras</h2>
+          <h2 className={PULSE.h2}>Aún no hay compras</h2>
           <p className={`mx-auto mt-3 max-w-md ${PULSE.body}`}>
             Cuando completes un pago en{" "}
             <Link href="/checkout" className={PULSE.link}>
               Checkout
             </Link>{" "}
-            con sesión iniciada, apareceran aqui.
+            con sesión iniciada, aparecerán aquí.
           </p>
           <Link
             href="/home"
@@ -184,7 +184,7 @@ export default function MisComprasPage() {
                       ) : null}
                       {!order.shipping.address && !order.shipping.phone ? (
                         <p className={`mt-2 text-sm text-[#65676B] ${PULSE.body}`}>
-                          No habia direccion en tu perfil al momento del pedido.
+                          No había dirección en tu perfil al momento del pedido.
                         </p>
                       ) : null}
                       <PurchaseShippingMapFromAddress
@@ -195,7 +195,7 @@ export default function MisComprasPage() {
                     </>
                   ) : (
                     <p className={`mt-2 text-sm text-[#65676B] ${PULSE.body}`}>
-                      Este pedido no incluye datos de envio guardados (compras
+                      Este pedido no incluye datos de envío guardados (compras
                       anteriores al cambio).
                     </p>
                   )}

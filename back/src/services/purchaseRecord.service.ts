@@ -68,7 +68,7 @@ export const createPurchaseRecordService = async (
     throw new ClientError("clientUserId es obligatorio.", 400);
   }
   if (!userEmail || !isValidEmail(userEmail)) {
-    throw new ClientError("userEmail no es valido.", 400);
+    throw new ClientError("userEmail no es válido.", 400);
   }
 
   const items = Array.isArray(dto?.items) ? dto.items : [];
@@ -77,7 +77,7 @@ export const createPurchaseRecordService = async (
   }
   for (const row of items) {
     if (!normalizeCartItem(row)) {
-      throw new ClientError("Formato invalido en items del carrito.", 400);
+      throw new ClientError("Formato inválido en artículos del carrito.", 400);
     }
   }
 
@@ -95,7 +95,7 @@ export const createPurchaseRecordService = async (
     !Number.isFinite(taxes) ||
     !Number.isFinite(total)
   ) {
-    throw new ClientError("totals deben ser numeros validos.", 400);
+    throw new ClientError("totals deben ser números válidos.", 400);
   }
 
   const record = PurchaseRecordRepository.create({

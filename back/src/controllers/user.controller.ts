@@ -10,6 +10,7 @@ import {
   updateUserContactService,
   updateUserPasswordService,
 } from "../services/user.service";
+import { notifyNewRegistrationWhatsApp } from "../helpers/whatsappRegistrationNotify";
 
 export const registerUser = catchedController(
   async (req: Request, res: Response) => {
@@ -20,6 +21,12 @@ export const registerUser = catchedController(
       name,
       address,
       phone,
+    });
+    void notifyNewRegistrationWhatsApp({
+      email: newUser.email,
+      name: newUser.name,
+      phone: newUser.phone,
+      registeredAt: new Date(),
     });
     res.status(201).send(toPublicUserJson(newUser));
   },

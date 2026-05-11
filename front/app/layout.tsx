@@ -6,6 +6,7 @@ import Navbar from "@/components/layout/Navbar";
 import Footer from "@/components/layout/Footer";
 import AuthBootstrap from "@/components/AuthBootstrap";
 import CartRemoteHydrate from "@/components/CartRemoteHydrate";
+import CatalogCartSync from "@/components/CatalogCartSync";
 
 const montserrat = Montserrat({
   variable: "--font-body",
@@ -37,6 +38,7 @@ export default function RootLayout({
       <body className="flex min-h-screen flex-col text-[#1C1E21] antialiased">
         <AuthBootstrap />
         <CartRemoteHydrate />
+        <CatalogCartSync />
         <Navbar />
         <main className="flex-1">{children}</main>
         <Footer />
