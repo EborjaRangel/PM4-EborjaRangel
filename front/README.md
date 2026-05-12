@@ -2,7 +2,7 @@ This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-
 
 ## Getting Started
 
-First, run the development server:
+First, run the development server (**this app listens on port 3001**):
 
 ```bash
 npm run dev
@@ -14,7 +14,12 @@ pnpm dev
 bun dev
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+Open [http://localhost:3001](http://localhost:3001) with your browser to see the result.
+
+## Deploy stack (Railway API + Vercel front)
+
+- API: **[`../back/DEPLOY_BACKEND.md`](../back/DEPLOY_BACKEND.md)**
+- Frontend: **[DEPLOY_VERCEL.md](./DEPLOY_VERCEL.md)** (Root Directory **`front`**, variable **`PULSE_BACKEND_URL`**)
 
 You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
 
@@ -31,6 +36,4 @@ You can check out [the Next.js GitHub repository](https://github.com/vercel/next
 
 ## Deploy on Vercel
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
-
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+See **`DEPLOY_VERCEL.md`** for this repo (monorepo root directory **`front`** and backend URL variables). Generic Next docs: [Vercel Platform](https://vercel.com/new), [deployment guide](https://nextjs.org/docs/app/building-your-application/deploying).
