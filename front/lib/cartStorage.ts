@@ -14,9 +14,21 @@ export interface ICartItem {
   id: number;
   name: string;
   price: number;
+  /** Primera foto (portada / images[0] en catálogo). */
   image: string;
+  /** Hasta 5 URLs del producto; la miniatura debe ser siempre images[0] si existe. */
+  images?: string[];
   qty: number;
   categoryId: number;
+}
+
+/** Primera foto del ítem (`images[0]` o campo `image` en pedidos/carrito legados). */
+export function cartItemCoverImage(item: Pick<ICartItem, "image" | "images">): string {
+  const urls = Array.isArray(item.images)
+    ? item.images.map((u) => String(u ?? "").trim()).filter(Boolean).slice(0, 5)
+    : [];
+  if (urls.length > 0) return urls[0]!;
+  return String(item.image ?? "").trim();
 }
 
 export interface ICartTotals {
@@ -47,17 +59,32 @@ export function notifyCartUpdated() {
   }
 }
 
+function normalizeGallery(raw: unknown): string[] | undefined {
+  if (!Array.isArray(raw)) return undefined;
+  const urls = raw
+    .map((u) => String(u ?? "").trim())
+    .filter(Boolean)
+    .slice(0, 5);
+  return urls.length > 0 ? urls : undefined;
+}
+
 function normalizeCartItems(parsed: unknown): ICartItem[] {
   if (!Array.isArray(parsed)) return [];
   return parsed
-    .map((it) => ({
-      id: Number((it as ICartItem).id),
-      name: String((it as ICartItem).name ?? ""),
-      price: Number((it as ICartItem).price ?? 0),
-      image: String((it as ICartItem).image ?? ""),
-      qty: Math.max(1, Number((it as ICartItem).qty ?? 1)),
-      categoryId: Number((it as ICartItem).categoryId ?? 0),
-    }))
+    .map((row) => {
+      const it = row as Record<string, unknown>;
+      const images = normalizeGallery(it.images);
+      const imageStored = String(it.image ?? "").trim();
+      return {
+        id: Number(it.id),
+        name: String(it.name ?? ""),
+        price: Number(it.price ?? 0),
+        image: images?.[0] ?? imageStored,
+        images,
+        qty: Math.max(1, Number(it.qty ?? 1)),
+        categoryId: Number(it.categoryId ?? 0),
+      };
+    })
     .filter((it) => Number.isInteger(it.id) && it.id > 0);
 }
 
@@ -122,14 +149,18 @@ function saveCartToKey(storageKey: string, items: ICartItem[]) {
 }
 
 function itemToPayload(it: ICartItem): Record<string, unknown> {
-  return {
+  const payload: Record<string, unknown> = {
     id: it.id,
     name: it.name,
     price: it.price,
-    image: it.image,
+    image: cartItemCoverImage(it),
     qty: it.qty,
     categoryId: it.categoryId,
   };
+  if (it.images && it.images.length > 0) {
+    payload.images = it.images.slice(0, 5);
+  }
+  return payload;
 }
 
 const pushTimers = new Map<string, ReturnType<typeof setTimeout>>();
@@ -232,11 +263,21 @@ export function addToCart(product: IProduct, qty = 1): ICartItem[] {
   if (idx >= 0) {
     items[idx] = { ...items[idx], qty: items[idx].qty + safeQty };
   } else {
+    const gallery = Array.isArray(product.images)
+      ? product.images
+          .map((u) => String(u ?? "").trim())
+          .filter(Boolean)
+          .slice(0, 5)
+      : [];
+    const cover =
+      gallery.length > 0 ? gallery[0]! : String(product.image ?? "").trim();
+
     items.push({
       id: product.id,
       name: product.name,
       price: Number(product.price),
-      image: product.image,
+      image: cover,
+      ...(gallery.length > 0 ? { images: gallery } : {}),
       qty: safeQty,
       categoryId: product.categoryId,
     });

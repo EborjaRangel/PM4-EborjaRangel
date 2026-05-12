@@ -19,6 +19,7 @@ import {
 import { IProduct } from "@/interfaces/product.interface";
 import { fetchProductCategories } from "@/lib/productCategoriesApi";
 import { ICategory } from "@/interfaces/category.interface";
+import { formatPrice } from "@/lib/formatPrice";
 
 const EMPTY_IMAGES: string[] = Array.from({ length: MAX_PRODUCT_IMAGES }, () => "");
 
@@ -271,7 +272,7 @@ export default function EditarProductosClient() {
               </option>
               {catalog.map((p) => (
                 <option key={p.id} value={p.id}>
-                  #{p.id} — {p.name} (${p.price.toFixed(2)})
+                  #{p.id} — {p.name} (${formatPrice(p.price)})
                 </option>
               ))}
             </select>

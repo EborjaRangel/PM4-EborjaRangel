@@ -9,6 +9,7 @@ import {
   CART_UPDATED_EVENT,
   ICartItem,
   ICartTotals,
+  cartItemCoverImage,
   clearCart,
   getCart,
   getCartTotals,
@@ -23,6 +24,8 @@ import {
 import { resolveMexicoShippingCoords } from "@/lib/geocodeShipping";
 import { listMyAddresses } from "@/lib/addressApi";
 import type { IAddress } from "@/interfaces/address.interface";
+import { formatPrice } from "@/lib/formatPrice";
+import PurchaseLineItemThumb from "@/components/PurchaseLineItemThumb/PurchaseLineItemThumb";
 
 type CardBrand = "visa" | "mastercard" | "amex" | "unknown";
 
@@ -592,7 +595,7 @@ export default function CheckoutPage() {
               className={PULSE.btnPrimaryBlock}
               disabled={submitting}
             >
-              {submitting ? "Guardando..." : `Pagar $${total.toFixed(2)}`}
+              {submitting ? "Guardando..." : `Pagar $${formatPrice(total)}`}
             </button>
           </form>
 
@@ -614,19 +617,34 @@ export default function CheckoutPage() {
               </Link>
             </p>
           ) : (
-            <ul className="mt-4 space-y-2 text-sm text-[#65676B]">
+            <ul className="mt-4 divide-y divide-[#1877F2]/15">
               {items.map((item) => (
                 <li
                   key={item.id}
-                  className="flex justify-between gap-2 border-b border-[#1877F2]/10 py-2 last:border-0"
+                  className="flex flex-col gap-3 py-3 sm:flex-row sm:items-start sm:justify-between sm:gap-6"
                 >
-                  <span>
-                    {item.name}{" "}
-                    <span className="text-xs">×{item.qty}</span>
-                  </span>
-                  <span className="shrink-0 font-medium text-[#1C1E21]">
-                    ${(item.price * item.qty).toFixed(2)}
-                  </span>
+                  <div className="flex min-w-0 flex-1 items-start gap-3">
+                    <PurchaseLineItemThumb
+                      src={cartItemCoverImage(item)}
+                      alt={item.name}
+                    />
+                    <div className="min-w-0 flex-1">
+                      <p className="font-semibold leading-snug text-[#1C1E21]">
+                        {item.name}
+                      </p>
+                      <p className="mt-1.5 text-sm text-[#65676B]">
+                        Cantidad{" "}
+                        <span className="font-semibold tabular-nums text-[#1C1E21]">
+                          {item.qty}
+                        </span>
+                      </p>
+                    </div>
+                  </div>
+                  <div className="shrink-0 border-t border-[#E8EAED] pt-2 text-right sm:min-w-[6.5rem] sm:border-0 sm:pt-0 sm:pl-4">
+                    <p className="text-base font-bold tabular-nums leading-tight text-[#1C1E21]">
+                      ${formatPrice(item.price * item.qty)}
+                    </p>
+                  </div>
                 </li>
               ))}
             </ul>
@@ -634,24 +652,24 @@ export default function CheckoutPage() {
           <div className="mt-4 space-y-2 border-t border-[#1877F2]/10 pt-4 text-sm">
             <div className="flex justify-between text-[#65676B]">
               <span>Subtotal</span>
-              <span>${subtotal.toFixed(2)}</span>
+              <span>${formatPrice(subtotal)}</span>
             </div>
             <div className="flex justify-between text-[#65676B]">
               <span>Envío</span>
               <span>
-                {shipping === 0 ? "Gratis" : `$${shipping.toFixed(2)}`}
+                {shipping === 0 ? "Gratis" : `$${formatPrice(shipping)}`}
               </span>
             </div>
             <div className="flex justify-between text-[#65676B]">
               <span>Impuestos</span>
-              <span>${taxes.toFixed(2)}</span>
+              <span>${formatPrice(taxes)}</span>
             </div>
             <div className="mt-3 flex items-center justify-between gap-3 rounded-full border border-[#1877F2]/35 bg-gradient-to-r from-[#E7F3FF] via-[#DCEEFE] to-[#E7F3FF] px-4 py-3 shadow-[0_4px_16px_rgba(24,119,242,0.18)] ring-1 ring-inset ring-white/60">
               <span className="text-sm font-bold uppercase tracking-wide text-[#1877F2]">
                 Total
               </span>
               <span className="text-2xl font-extrabold tabular-nums text-[#1877F2] drop-shadow-[0_1px_2px_rgba(24,119,242,0.25)]">
-                ${total.toFixed(2)}
+                ${formatPrice(total)}
               </span>
             </div>
           </div>

@@ -18,7 +18,9 @@ function Footer() {
     pathname === "/mis-compras" ||
     pathname === "/profile" ||
     pathname === "/dashboard" ||
-    pathname.startsWith("/envio/");
+    pathname.startsWith("/envio/") ||
+    pathname === "/login" ||
+    pathname === "/register";
 
   return (
     <footer className="mt-auto border-t border-[#DADDE1] bg-[#F0F2F5] px-6 py-10 text-[#65676B]">

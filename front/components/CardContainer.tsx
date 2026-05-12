@@ -9,12 +9,14 @@ import { PULSE } from "@/lib/pulse";
 import { CATALOG_UPDATED_EVENT, fetchProducts } from "@/lib/productCatalog";
 import { fetchProductCategories } from "@/lib/productCategoriesApi";
 import { categoryLabel as fallbackCategoryLabel } from "@/data/productCategories";
+import { formatPrice } from "@/lib/formatPrice";
 
 function CatalogImage({ src, alt }: { src: string; alt: string }) {
   const allowedHost =
     src.includes("picsum.photos") ||
     src.includes("images.unsplash.com") ||
-    src.includes("source.unsplash.com");
+    src.includes("source.unsplash.com") ||
+    src.includes("loremflickr.com");
 
   if (allowedHost) {
     return (
@@ -256,7 +258,7 @@ function CardContainer() {
                     {p.description}
                   </p>
                   <p className="mt-4 text-lg font-bold text-[#1877F2]">
-                    ${Number(p.price).toFixed(2)}
+                    ${formatPrice(p.price)}
                   </p>
                   <p className="mt-1 text-xs text-[#65676B]">
                     Stock: {p.stock} unidades

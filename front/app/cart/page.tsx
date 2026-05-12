@@ -11,12 +11,14 @@ import {
   CART_UPDATED_EVENT,
   ICartItem,
   ICartTotals,
+  cartItemCoverImage,
   getCart,
   getCartTotals,
   removeFromCart,
   setQty,
 } from "@/lib/cartStorage";
 import { categoryLabel } from "@/data/productCategories";
+import { formatPrice } from "@/lib/formatPrice";
 
 function CartImage({ src, alt }: { src: string; alt: string }) {
   if (!src) {
@@ -27,7 +29,8 @@ function CartImage({ src, alt }: { src: string; alt: string }) {
   const allowedHost =
     src.includes("picsum.photos") ||
     src.includes("images.unsplash.com") ||
-    src.includes("source.unsplash.com");
+    src.includes("source.unsplash.com") ||
+    src.includes("loremflickr.com");
 
   if (allowedHost) {
     return (
@@ -218,7 +221,7 @@ function CartPage() {
                   className={`flex flex-col gap-4 rounded-2xl border border-[#1877F2]/12 ${PULSE.surfaceMuted} p-4 sm:flex-row sm:items-center sm:justify-between`}
                 >
                   <div className="flex items-center gap-4">
-                    <CartImage src={item.image} alt={item.name} />
+                    <CartImage src={cartItemCoverImage(item)} alt={item.name} />
                     <div>
                       <p className="text-base font-semibold text-[#1C1E21]">
                         {item.name}
@@ -227,7 +230,7 @@ function CartPage() {
                         {categoryLabel(item.categoryId)}
                       </p>
                       <p className="mt-1 text-xs text-[#65676B]">
-                        ${item.price.toFixed(2)} c/u
+                        ${formatPrice(item.price)} c/u
                       </p>
                     </div>
                   </div>
@@ -255,7 +258,7 @@ function CartPage() {
                       </button>
                     </div>
                     <p className="text-base font-bold text-[#1877F2]">
-                      ${(item.price * item.qty).toFixed(2)}
+                      ${formatPrice(item.price * item.qty)}
                     </p>
                     <button
                       type="button"
@@ -318,24 +321,24 @@ function CartPage() {
             <div className="mt-5 space-y-3 text-sm">
               <div className="flex items-center justify-between text-[#65676B]">
                 <span>Subtotal</span>
-                <span>${totals.subtotal.toFixed(2)}</span>
+                <span>${formatPrice(totals.subtotal)}</span>
               </div>
               <div className="flex items-center justify-between text-[#65676B]">
                 <span>Envio</span>
                 <span>
                   {totals.shipping === 0
                     ? "Gratis"
-                    : `$${totals.shipping.toFixed(2)}`}
+                    : `$${formatPrice(totals.shipping)}`}
                 </span>
               </div>
               <div className="flex items-center justify-between text-[#65676B]">
                 <span>Impuestos</span>
-                <span>${totals.taxes.toFixed(2)}</span>
+                <span>${formatPrice(totals.taxes)}</span>
               </div>
               <div className="my-3 border-t border-[#1877F2]/10" />
               <div className="flex items-center justify-between text-base font-bold text-[#1C1E21]">
                 <span>Total</span>
-                <span>${totals.total.toFixed(2)}</span>
+                <span>${formatPrice(totals.total)}</span>
               </div>
             </div>
 

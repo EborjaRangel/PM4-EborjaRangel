@@ -5,17 +5,18 @@ import { useCallback, useRef } from "react";
 type HeroAutoplayVideoProps = {
   src: string;
   className?: string;
+  /** En bucle: no se pausa el último frame; útil para landing con reproducción continua. */
+  loop?: boolean;
   "aria-label"?: string;
 };
 
 /**
- * Autoplay sin controles, una sola vez; al terminar queda en el último fotograma.
- * Ref callback: en la primera carga full-page el useEffect a veces corre antes de que
- * el <video> esté listo para play(); enganchamos listeners en el mismo commit del nodo.
+ * Autoplay sin controles. Sin `loop`, al terminar queda en el último fotograma.
  */
 export default function HeroAutoplayVideo({
   src,
   className = "",
+  loop = false,
   "aria-label": ariaLabel = "Video de presentación",
 }: HeroAutoplayVideoProps) {
   const cleanupRef = useRef<(() => void) | null>(null);
@@ -39,7 +40,7 @@ export default function HeroAutoplayVideo({
       if (!el) return;
 
       const tryPlay = () => {
-        if (el.ended) return;
+        if (!loop && el.ended) return;
         if (!el.paused) return;
         el.muted = true;
         el.defaultMuted = true;
@@ -61,7 +62,7 @@ export default function HeroAutoplayVideo({
       const maxAttempts = 50;
       const interval = window.setInterval(() => {
         attempts += 1;
-        if (el.ended || attempts > maxAttempts) {
+        if ((!loop && el.ended) || attempts > maxAttempts) {
           window.clearInterval(interval);
           return;
         }
@@ -95,7 +96,7 @@ export default function HeroAutoplayVideo({
         io.disconnect();
       };
     },
-    [],
+    [freezeLastFrame, loop],
   );
 
   return (
@@ -110,7 +111,10 @@ export default function HeroAutoplayVideo({
       preload="auto"
       disablePictureInPicture
       controlsList="nodownload noremoteplayback"
-      onEnded={(e) => freezeLastFrame(e.currentTarget)}
+      loop={loop}
+      onEnded={(e) => {
+        if (!loop) freezeLastFrame(e.currentTarget);
+      }}
       onLoadedData={(e) => {
         const el = e.currentTarget;
         el.muted = true;

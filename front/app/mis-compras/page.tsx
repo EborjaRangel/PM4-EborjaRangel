@@ -14,10 +14,12 @@ import {
 import { categoryLabel } from "@/data/productCategories";
 import PurchaseShippingMapFromAddress from "@/components/PurchaseShippingMap/PurchaseShippingMapFromAddress";
 import PurchaseQrCode from "@/components/PurchaseQrCode/PurchaseQrCode";
+import PurchaseLineItemThumb from "@/components/PurchaseLineItemThumb/PurchaseLineItemThumb";
+import { cartItemCoverImage } from "@/lib/cartStorage";
+import { formatPrice } from "@/lib/formatPrice";
 
 function formatOrderMoney(value: number): string {
-  if (!Number.isFinite(value)) return "—";
-  return value.toFixed(2);
+  return formatPrice(value);
 }
 
 export default function MisComprasPage() {
@@ -211,22 +213,33 @@ export default function MisComprasPage() {
                   {order.items.map((item) => (
                     <li
                       key={`${order.id}-${item.id}`}
-                      className="flex flex-col gap-1 py-3 sm:flex-row sm:items-center sm:justify-between"
+                      className="flex flex-col gap-3 py-4 sm:flex-row sm:items-start sm:justify-between sm:gap-6"
                     >
-                      <div>
-                        <p className="font-semibold text-[#1C1E21]">
-                          {item.name}
-                        </p>
-                        <p className="text-xs text-[#65676B]">
-                          {categoryLabel(item.categoryId)} · ${item.price.toFixed(2)} c/u
-                        </p>
+                      <div className="flex min-w-0 flex-1 items-start gap-4">
+                        <PurchaseLineItemThumb
+                          src={cartItemCoverImage(item)}
+                          alt={item.name}
+                        />
+                        <div className="min-w-0 flex-1">
+                          <p className="font-semibold text-[#1C1E21]">
+                            {item.name}
+                          </p>
+                          <p className="mt-0.5 text-xs text-[#65676B]">
+                            {categoryLabel(item.categoryId)} · $
+                            {formatPrice(item.price)} c/u
+                          </p>
+                          <p className={`mt-2 text-sm ${PULSE.body} text-[#65676B]`}>
+                            Cantidad{" "}
+                            <span className="font-semibold tabular-nums text-[#1C1E21]">
+                              {item.qty}
+                            </span>
+                          </p>
+                        </div>
                       </div>
-                      <div className="flex items-center gap-4 text-sm text-[#65676B]">
-                        <span>Cant. {item.qty}</span>
-                        <span className="font-bold tabular-nums text-[#1877F2]">
-                          $
-                          {formatOrderMoney(item.price * item.qty)}
-                        </span>
+                      <div className="shrink-0 border-t border-[#E8EAED] pt-3 text-right sm:min-w-[7rem] sm:border-0 sm:pt-0 sm:pl-6">
+                        <p className="text-lg font-bold tabular-nums leading-tight text-[#1877F2] sm:text-xl">
+                          ${formatOrderMoney(item.price * item.qty)}
+                        </p>
                       </div>
                     </li>
                   ))}

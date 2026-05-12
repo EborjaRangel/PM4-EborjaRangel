@@ -166,3 +166,41 @@ button {
 .catalog-search-icon-ring {
   animation: catalog-search-pulse-ring 2.8s ease-in-out infinite;
 }
+
+/* Landing — “Dreams Time”: gradiente en movimiento mientras ves la página (respeta prefers-reduced-motion). */
+@keyframes landing-dreams-time-flow {
+  0% {
+    background-position: 0% center;
+  }
+  100% {
+    background-position: 200% center;
+  }
+}
+
+.landing-dreams-time-marquee {
+  display: inline;
+  padding-inline: 0.02em;
+  background: linear-gradient(
+    95deg,
+    #1877f2 0%,
+    #1da1f2 32%,
+    #62dfff 52%,
+    #1877f2 73%,
+    #1da1f2 100%
+  );
+  background-size: 220% auto;
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+  animation: landing-dreams-time-flow 4.5s linear infinite;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .landing-dreams-time-marquee {
+    animation: none;
+    background: none;
+    background-clip: border-box;
+    -webkit-background-clip: unset;
+    color: #1877f2;
+  }
+}

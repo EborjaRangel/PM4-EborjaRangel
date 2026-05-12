@@ -14,6 +14,7 @@ import { deleteAdminProduct, fetchProducts } from "@/lib/productCatalog";
 import { IProduct } from "@/interfaces/product.interface";
 import { fetchProductCategories } from "@/lib/productCategoriesApi";
 import { ICategory } from "@/interfaces/category.interface";
+import { formatPrice } from "@/lib/formatPrice";
 
 export default function AdminProductRemovalPage() {
   const router = useRouter();
@@ -167,7 +168,7 @@ export default function AdminProductRemovalPage() {
                       <span className="font-semibold text-[#1C1E21]">{p.name}</span>
                       <span className="ml-2 text-xs text-[#65676B]">ID {p.id}</span>
                       <p className="mt-0.5 truncate text-xs text-[#65676B]">
-                        {categoryLabel(p.categoryId)} · ${Number(p.price).toFixed(2)} · Stock{" "}
+                        {categoryLabel(p.categoryId)} · ${formatPrice(p.price)} · Stock{" "}
                         {p.stock}
                       </p>
                     </div>

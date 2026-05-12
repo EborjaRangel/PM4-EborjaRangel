@@ -49,16 +49,29 @@ function normalizeMoney(value: unknown): number {
   return 0;
 }
 
+function normalizeImagesArray(raw: unknown): string[] | undefined {
+  if (!Array.isArray(raw)) return undefined;
+  const urls = raw
+    .map((u) => String(u ?? "").trim())
+    .filter(Boolean)
+    .slice(0, 5);
+  return urls.length > 0 ? urls : undefined;
+}
+
 function normalizeItem(raw: unknown): ICartItem | null {
   if (!raw || typeof raw !== "object") return null;
   const it = raw as Record<string, unknown>;
   const id = Number(it.id);
   if (!Number.isInteger(id) || id < 1) return null;
+  const gallery = normalizeImagesArray(it.images);
+  const storedImage = String(it.image ?? "").trim();
+  const imagePrimary = gallery?.[0] ?? storedImage;
   return {
     id,
     name: String(it.name ?? ""),
     price: Number(it.price ?? 0),
-    image: String(it.image ?? ""),
+    image: imagePrimary,
+    images: gallery,
     qty: Math.max(1, Math.floor(Number(it.qty ?? 1))),
     categoryId: Number(it.categoryId ?? 0),
   };

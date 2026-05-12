@@ -9,14 +9,18 @@ import ConfirmPurchaseModal from "@/components/ConfirmPurchaseModal";
 import { PULSE } from "@/lib/pulse";
 import { CATALOG_UPDATED_EVENT, fetchProductById } from "@/lib/productCatalog";
 import { addToCart } from "@/lib/cartStorage";
+import { AUTH_CHANGED_EVENT, getCurrentUser } from "@/lib/authStorage";
+import type { PublicUser } from "@/interfaces/auth.interface";
 import { categoryLabel } from "@/data/productCategories";
 import { IProduct } from "@/interfaces/product.interface";
+import { formatPrice } from "@/lib/formatPrice";
 
 function isAllowedHost(src: string): boolean {
   return (
     src.includes("picsum.photos") ||
     src.includes("images.unsplash.com") ||
-    src.includes("source.unsplash.com")
+    src.includes("source.unsplash.com") ||
+    src.includes("loremflickr.com")
   );
 }
 
@@ -160,6 +164,16 @@ export default function ProductPageById() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [confirmOpen, setConfirmOpen] = useState(false);
+  const [clientUser, setClientUser] = useState<PublicUser | null>(null);
+
+  useEffect(() => {
+    function onAuth() {
+      setClientUser(getCurrentUser());
+    }
+    onAuth();
+    window.addEventListener(AUTH_CHANGED_EVENT, onAuth);
+    return () => window.removeEventListener(AUTH_CHANGED_EVENT, onAuth);
+  }, []);
 
   useEffect(() => {
     if (!Number.isFinite(productId) || productId < 1) {
@@ -220,6 +234,10 @@ export default function ProductPageById() {
     };
   }, [productId]);
 
+  useEffect(() => {
+    if (!clientUser) setConfirmOpen(false);
+  }, [clientUser]);
+
   const carouselImages = useMemo(() => {
     if (!product) return [];
     const list =
@@ -231,6 +249,13 @@ export default function ProductPageById() {
     return list.slice(0, 5);
   }, [product]);
 
+  const authReturnPath =
+    Number.isFinite(productId) && productId >= 1
+      ? `/product/${productId}`
+      : "/home";
+  const loginHref = `/login?next=${encodeURIComponent(authReturnPath)}`;
+  const registerHref = `/register?next=${encodeURIComponent(authReturnPath)}`;
+
   function handleAddToCart() {
     if (!product) return;
     addToCart(product, 1);
@@ -238,12 +263,12 @@ export default function ProductPageById() {
   }
 
   function handleBuyClick() {
-    if (!product) return;
+    if (!product || !clientUser) return;
     setConfirmOpen(true);
   }
 
   function handleConfirmBuy() {
-    if (!product) return;
+    if (!product || !clientUser) return;
     addToCart(product, 1);
     setConfirmOpen(false);
     router.push("/checkout");
@@ -275,6 +300,9 @@ export default function ProductPageById() {
   }
 
   const stockOut = product.stock <= 0;
+  const loggedIn = Boolean(clientUser);
+  const disabledAddToCart = stockOut;
+  const disabledBuy = stockOut || !loggedIn;
 
   return (
     <PageShell>
@@ -305,7 +333,7 @@ export default function ProductPageById() {
 
             <div className="flex items-baseline gap-3">
               <span className="text-3xl font-bold text-[#1877F2]">
-                ${Number(product.price).toFixed(2)}
+                ${formatPrice(product.price)}
               </span>
               <span className="text-xs text-[#65676B]">
                 Impuestos calculados al pagar
@@ -325,7 +353,8 @@ export default function ProductPageById() {
               <button
                 type="button"
                 onClick={handleAddToCart}
-                disabled={stockOut}
+                disabled={disabledAddToCart}
+                title={stockOut ? "Sin stock" : undefined}
                 className={`${PULSE.btnSecondary} cursor-pointer disabled:cursor-not-allowed disabled:opacity-60`}
               >
                 Agregar al carrito
@@ -333,12 +362,32 @@ export default function ProductPageById() {
               <button
                 type="button"
                 onClick={handleBuyClick}
-                disabled={stockOut}
+                disabled={disabledBuy}
+                title={
+                  stockOut
+                    ? "Sin stock"
+                    : !loggedIn
+                      ? "Inicia sesión para comprar"
+                      : undefined
+                }
                 className={`${PULSE.btnPrimary} cursor-pointer disabled:cursor-not-allowed disabled:opacity-60`}
               >
                 Comprar
               </button>
             </div>
+
+            {!loggedIn ? (
+              <p className={`mt-2 text-xs sm:mt-1 ${PULSE.body} text-[#65676B]`}>
+                Para comprar desde aquí necesitas una cuenta.{" "}
+                <Link href={loginHref} className={PULSE.link}>
+                  Iniciar sesión
+                </Link>{" "}
+                ·{" "}
+                <Link href={registerHref} className={PULSE.link}>
+                  Crear cuenta
+                </Link>
+              </p>
+            ) : null}
           </div>
         </article>
       </section>

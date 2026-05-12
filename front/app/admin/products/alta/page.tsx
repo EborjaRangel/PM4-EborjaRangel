@@ -14,6 +14,7 @@ import { addAdminProduct, fetchProducts, MAX_PRODUCT_IMAGES } from "@/lib/produc
 import { IProduct } from "@/interfaces/product.interface";
 import { fetchProductCategories } from "@/lib/productCategoriesApi";
 import { ICategory } from "@/interfaces/category.interface";
+import { formatPrice } from "@/lib/formatPrice";
 
 const EMPTY_IMAGES: string[] = Array.from({ length: MAX_PRODUCT_IMAGES }, () => "");
 
@@ -348,7 +349,7 @@ export default function AdminProductsAltaPage() {
                   <span className="ml-2 text-xs text-[#65676B]">ID {p.id}</span>
                 </div>
                 <div className="text-sm text-[#65676B]">
-                  ${p.price.toFixed(2)} · Stock {p.stock}
+                  ${formatPrice(p.price)} · Stock {p.stock}
                 </div>
               </li>
             ))}

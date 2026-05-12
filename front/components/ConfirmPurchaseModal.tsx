@@ -2,6 +2,7 @@
 
 import { useEffect } from "react";
 import { PULSE } from "@/lib/pulse";
+import { formatPrice } from "@/lib/formatPrice";
 
 interface ConfirmPurchaseModalProps {
   open: boolean;
@@ -72,10 +73,10 @@ export default function ConfirmPurchaseModal({
 
           <div className="mt-3 flex items-center justify-between text-sm">
             <span className="text-[#65676B]">
-              Cantidad x {quantity} · ${unitPrice.toFixed(2)} c/u
+              Cantidad x {quantity} · ${formatPrice(unitPrice)} c/u
             </span>
             <span className="font-bold text-[#1877F2]">
-              ${total.toFixed(2)}
+              ${formatPrice(total)}
             </span>
           </div>
         </div>
